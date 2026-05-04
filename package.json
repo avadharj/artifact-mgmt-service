@@ -1,0 +1,16 @@
+{
+  "name": "artifact-mgmt-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
+  },
+  "lint-staged": {
+    "**/*.smithy": "sh -c 'smithy validate smithy-model/smithy-build.json'",
+    "lambda-handlers/src/**/*.java": "sh -c 'cd lambda-handlers && ./gradlew spotlessCheck --daemon -q'"
+  }
+}
