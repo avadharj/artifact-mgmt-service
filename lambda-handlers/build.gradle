@@ -17,6 +17,10 @@ repositories {
     mavenCentral()
 }
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 def awsSdkVersion = '2.25.26'
 def jacksonVersion = '2.17.0'
 def junitVersion = '5.10.2'

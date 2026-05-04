@@ -12,8 +12,8 @@ describe('DataStack alpha', () => {
   const app = new cdk.App();
   const stack = new DataStack(app, 'TestDataStack', { config, env });
 
-  it('synthesizes', () => {
-    expect(Template.fromStack(stack).toJSON()).toBeDefined();
+  it('matches snapshot', () => {
+    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
   });
 });
 
@@ -21,8 +21,8 @@ describe('ComputeStack alpha', () => {
   const app = new cdk.App();
   const stack = new ComputeStack(app, 'TestComputeStack', { config, env });
 
-  it('synthesizes', () => {
-    expect(Template.fromStack(stack).toJSON()).toBeDefined();
+  it('matches snapshot', () => {
+    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
   });
 });
 
@@ -30,7 +30,7 @@ describe('ApiStack alpha', () => {
   const app = new cdk.App();
   const stack = new ApiStack(app, 'TestApiStack', { config, env });
 
-  it('synthesizes', () => {
-    expect(Template.fromStack(stack).toJSON()).toBeDefined();
+  it('matches snapshot', () => {
+    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
   });
 });
