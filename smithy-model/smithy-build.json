@@ -18,14 +18,6 @@
                     "protocol": "aws.protocols#restJson1"
                 }
             }
-        },
-        "node": {
-            "plugins": {
-                "openapi": {
-                    "service": "com.anthropic.artifactmgmt#ArtifactMgmt",
-                    "protocol": "aws.protocols#restJson1"
-                }
-            }
         }
     }
 }
