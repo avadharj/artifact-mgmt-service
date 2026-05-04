@@ -18,6 +18,9 @@
                     "protocol": "aws.protocols#restJson1"
                 }
             }
+        },
+        "node": {
+            "plugins": {}
         }
     }
 }
