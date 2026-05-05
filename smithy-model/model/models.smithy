@@ -36,6 +36,7 @@ resource Model {
     read: GetModel
     list: ListModels
     delete: DeleteModel
+    resources: [ModelVersion]
 }
 
 // ── CreateModel ──────────────────────────────────────────────────────────────
