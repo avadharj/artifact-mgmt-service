@@ -7,4 +7,12 @@ use aws.protocols#restJson1
 @restJson1
 service ArtifactMgmt {
     version: "2026-05-04"
+    resources: [
+        Model
+    ]
+    errors: [
+        ValidationException
+        ThrottlingException
+        InternalServerException
+    ]
 }

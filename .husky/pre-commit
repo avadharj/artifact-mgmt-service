@@ -6,5 +6,7 @@ if [ -n "$JAVA_11" ]; then
   export JAVA_HOME="$JAVA_11"
 fi
 
+export PATH="$HOME/bin:/usr/local/bin:$PATH"
+
 cd "$(git rev-parse --show-toplevel)"
 npx lint-staged
