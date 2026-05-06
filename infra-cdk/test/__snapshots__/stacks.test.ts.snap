@@ -314,11 +314,153 @@ exports[`ComputeStack prod matches snapshot 1`] = `
 
 exports[`DataStack alpha matches snapshot 1`] = `
 {
+  "Outputs": {
+    "ModelsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ModelsTableC5E7E44A",
+          "Arn",
+        ],
+      },
+    },
+    "ModelsTableName": {
+      "Value": {
+        "Ref": "ModelsTableC5E7E44A",
+      },
+    },
+    "VersionsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VersionsTable23B78FD4",
+          "Arn",
+        ],
+      },
+    },
+    "VersionsTableName": {
+      "Value": {
+        "Ref": "VersionsTable23B78FD4",
+      },
+    },
+  },
   "Parameters": {
     "BootstrapVersion": {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ModelsTableC5E7E44A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-models-alpha",
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionsTable23B78FD4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "version_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "created_at",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "idempotency-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "idempotency_key",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "status-created-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "status",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "created_at",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "NonKeyAttributes": [
+                "s3_key",
+                "idempotency_key",
+              ],
+              "ProjectionType": "INCLUDE",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "version_key",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-versions-alpha",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
     },
   },
   "Rules": {
@@ -353,11 +495,153 @@ exports[`DataStack alpha matches snapshot 1`] = `
 
 exports[`DataStack beta matches snapshot 1`] = `
 {
+  "Outputs": {
+    "ModelsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ModelsTableC5E7E44A",
+          "Arn",
+        ],
+      },
+    },
+    "ModelsTableName": {
+      "Value": {
+        "Ref": "ModelsTableC5E7E44A",
+      },
+    },
+    "VersionsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VersionsTable23B78FD4",
+          "Arn",
+        ],
+      },
+    },
+    "VersionsTableName": {
+      "Value": {
+        "Ref": "VersionsTable23B78FD4",
+      },
+    },
+  },
   "Parameters": {
     "BootstrapVersion": {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ModelsTableC5E7E44A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-models-beta",
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionsTable23B78FD4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "version_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "created_at",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "idempotency-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "idempotency_key",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "status-created-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "status",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "created_at",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "NonKeyAttributes": [
+                "s3_key",
+                "idempotency_key",
+              ],
+              "ProjectionType": "INCLUDE",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "version_key",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-versions-beta",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
     },
   },
   "Rules": {
@@ -392,11 +676,555 @@ exports[`DataStack beta matches snapshot 1`] = `
 
 exports[`DataStack gamma matches snapshot 1`] = `
 {
+  "Outputs": {
+    "ModelsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ModelsTableC5E7E44A",
+          "Arn",
+        ],
+      },
+    },
+    "ModelsTableName": {
+      "Value": {
+        "Ref": "ModelsTableC5E7E44A",
+      },
+    },
+    "VersionsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VersionsTable23B78FD4",
+          "Arn",
+        ],
+      },
+    },
+    "VersionsTableName": {
+      "Value": {
+        "Ref": "VersionsTable23B78FD4",
+      },
+    },
+  },
   "Parameters": {
     "BootstrapVersion": {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ModelsTableC5E7E44A": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 10,
+          "WriteCapacityUnits": 10,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-models-gamma",
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ModelsTableReadScalingTarget8436FA0B": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "ModelsTableC5E7E44A",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ModelsTableReadScalingTargetTracking3FCBD3A4": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaModelsTableReadScalingTargetTracking806790F4",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ModelsTableReadScalingTarget8436FA0B",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "ModelsTableWriteScalingTargetC2431A01": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "ModelsTableC5E7E44A",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ModelsTableWriteScalingTargetTracking0BDDF926": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaModelsTableWriteScalingTargetTracking29514EB8",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ModelsTableWriteScalingTargetC2431A01",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTable23B78FD4": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "version_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "created_at",
+            "AttributeType": "S",
+          },
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "idempotency-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "idempotency_key",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 10,
+              "WriteCapacityUnits": 10,
+            },
+          },
+          {
+            "IndexName": "status-created-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "status",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "created_at",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "NonKeyAttributes": [
+                "s3_key",
+                "idempotency_key",
+              ],
+              "ProjectionType": "INCLUDE",
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 10,
+              "WriteCapacityUnits": 10,
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "version_key",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 10,
+          "WriteCapacityUnits": 10,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-versions-gamma",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "VersionsTableReadScalingTargetF403C42A": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableReadScalingTargetTrackingB0010D18": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTableReadScalingTargetTracking489F7868",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableReadScalingTargetF403C42A",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableWriteScalingTargetE2D3B5FE": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableWriteScalingTargetTrackingAC228CC4": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTableWriteScalingTargetTrackingF5D4CB42",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableWriteScalingTargetE2D3B5FE",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableidempotencygsiReadScalingTarget042982F0": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/idempotency-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableidempotencygsiReadScalingTargetTracking00CC2C33": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTableidempotencygsiReadScalingTargetTrackingE09713B7",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableidempotencygsiReadScalingTarget042982F0",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableidempotencygsiWriteScalingTarget46F7D01E": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/idempotency-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableidempotencygsiWriteScalingTargetTrackingB4C914F7": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTableidempotencygsiWriteScalingTargetTrackingB5F4DF1D",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableidempotencygsiWriteScalingTarget46F7D01E",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTablestatuscreatedgsiReadScalingTarget3BAF451B": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/status-created-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTablestatuscreatedgsiReadScalingTargetTrackingDE7F786E": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTablestatuscreatedgsiReadScalingTargetTrackingAF350DE1",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTablestatuscreatedgsiReadScalingTarget3BAF451B",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTablestatuscreatedgsiWriteScalingTarget13C93686": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/status-created-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTablestatuscreatedgsiWriteScalingTargetTrackingF38D6E0B": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaVersionsTablestatuscreatedgsiWriteScalingTargetTrackingAD3F57EA",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTablestatuscreatedgsiWriteScalingTarget13C93686",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
     },
   },
   "Rules": {
@@ -431,11 +1259,555 @@ exports[`DataStack gamma matches snapshot 1`] = `
 
 exports[`DataStack prod matches snapshot 1`] = `
 {
+  "Outputs": {
+    "ModelsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ModelsTableC5E7E44A",
+          "Arn",
+        ],
+      },
+    },
+    "ModelsTableName": {
+      "Value": {
+        "Ref": "ModelsTableC5E7E44A",
+      },
+    },
+    "VersionsTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VersionsTable23B78FD4",
+          "Arn",
+        ],
+      },
+    },
+    "VersionsTableName": {
+      "Value": {
+        "Ref": "VersionsTable23B78FD4",
+      },
+    },
+  },
   "Parameters": {
     "BootstrapVersion": {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ModelsTableC5E7E44A": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 50,
+          "WriteCapacityUnits": 50,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-models-prod",
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ModelsTableReadScalingTarget8436FA0B": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "ModelsTableC5E7E44A",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ModelsTableReadScalingTargetTracking3FCBD3A4": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodModelsTableReadScalingTargetTracking68F0C16C",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ModelsTableReadScalingTarget8436FA0B",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "ModelsTableWriteScalingTargetC2431A01": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "ModelsTableC5E7E44A",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "ModelsTableWriteScalingTargetTracking0BDDF926": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodModelsTableWriteScalingTargetTracking97E36C22",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ModelsTableWriteScalingTargetC2431A01",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTable23B78FD4": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "model_name",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "version_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "created_at",
+            "AttributeType": "S",
+          },
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "idempotency-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "idempotency_key",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 50,
+              "WriteCapacityUnits": 50,
+            },
+          },
+          {
+            "IndexName": "status-created-gsi",
+            "KeySchema": [
+              {
+                "AttributeName": "status",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "created_at",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "NonKeyAttributes": [
+                "s3_key",
+                "idempotency_key",
+              ],
+              "ProjectionType": "INCLUDE",
+            },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 50,
+              "WriteCapacityUnits": 50,
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "model_name",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "version_key",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 50,
+          "WriteCapacityUnits": 50,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-versions-prod",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "VersionsTableReadScalingTargetF403C42A": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableReadScalingTargetTrackingB0010D18": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTableReadScalingTargetTracking712582F4",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableReadScalingTargetF403C42A",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableWriteScalingTargetE2D3B5FE": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableWriteScalingTargetTrackingAC228CC4": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTableWriteScalingTargetTrackingE46C1E40",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableWriteScalingTargetE2D3B5FE",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableidempotencygsiReadScalingTarget042982F0": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/idempotency-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableidempotencygsiReadScalingTargetTracking00CC2C33": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTableidempotencygsiReadScalingTargetTracking4FD2411C",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableidempotencygsiReadScalingTarget042982F0",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTableidempotencygsiWriteScalingTarget46F7D01E": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/idempotency-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTableidempotencygsiWriteScalingTargetTrackingB4C914F7": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTableidempotencygsiWriteScalingTargetTrackingF24D42E2",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTableidempotencygsiWriteScalingTarget46F7D01E",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTablestatuscreatedgsiReadScalingTarget3BAF451B": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/status-created-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTablestatuscreatedgsiReadScalingTargetTrackingDE7F786E": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTablestatuscreatedgsiReadScalingTargetTracking8F695E51",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTablestatuscreatedgsiReadScalingTarget3BAF451B",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "VersionsTablestatuscreatedgsiWriteScalingTarget13C93686": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "VersionsTable23B78FD4",
+              },
+              "/index/status-created-gsi",
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:index:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "VersionsTablestatuscreatedgsiWriteScalingTargetTrackingF38D6E0B": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodVersionsTablestatuscreatedgsiWriteScalingTargetTrackingBD9FE77C",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "VersionsTablestatuscreatedgsiWriteScalingTarget13C93686",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
     },
   },
   "Rules": {
