@@ -1,0 +1,99 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Java 21 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: "21"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Smithy CLI
+        run: |
+          curl -sL https://github.com/smithy-lang/smithy/releases/download/1.50.0/smithy-cli-linux-x86_64.zip \
+            -o /tmp/smithy-cli.zip
+          unzip -q /tmp/smithy-cli.zip -d /tmp/smithy-cli
+          echo "/tmp/smithy-cli/smithy-cli-linux-x86_64/bin" >> $GITHUB_PATH
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: gradle-${{ hashFiles('lambda-handlers/gradle.lockfile', 'lambda-handlers/gradle/wrapper/gradle-wrapper.properties', 'java-sdk/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json', 'infra-cdk/package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Cache Smithy dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/software/amazon/smithy
+          key: smithy-${{ hashFiles('smithy-model/smithy-build.json') }}
+          restore-keys: smithy-
+
+      - name: Install root npm dependencies
+        run: npm ci
+
+      - name: Install infra-cdk npm dependencies
+        run: cd infra-cdk && npm ci
+
+      - name: Build (Smithy validate + Gradle build + CDK synth)
+        run: ./scripts/build.sh
+
+      - name: Java unit tests
+        run: cd lambda-handlers && ./gradlew test --info
+
+      - name: CDK unit tests
+        run: cd infra-cdk && npm test
+
+      - name: SDK generation
+        run: make sdk
+
+      - name: Upload Gradle test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports
+          path: lambda-handlers/build/reports/tests/test/
+          retention-days: 14
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Java Unit Tests
+          path: lambda-handlers/build/test-results/test/*.xml
+          reporter: java-junit
