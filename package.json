@@ -6,6 +6,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.13.4",
     "husky": "9.1.7",
     "lint-staged": "15.5.2"
   },
