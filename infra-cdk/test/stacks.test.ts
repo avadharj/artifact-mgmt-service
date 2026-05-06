@@ -5,32 +5,36 @@ import { ComputeStack } from '../lib/compute-stack';
 import { DataStack } from '../lib/data-stack';
 import { STAGES } from '../lib/stage-config';
 
-const config = STAGES.alpha;
-const env = { account: config.account, region: config.region };
+const stageNames = ['alpha', 'beta', 'gamma', 'prod'] as const;
 
-describe('DataStack alpha', () => {
-  const app = new cdk.App();
-  const stack = new DataStack(app, 'TestDataStack', { config, env });
+for (const stageName of stageNames) {
+  const config = STAGES[stageName];
+  const env = { account: config.account, region: config.region };
 
-  it('matches snapshot', () => {
-    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+  describe(`DataStack ${stageName}`, () => {
+    const app = new cdk.App();
+    const stack = new DataStack(app, `TestDataStack-${stageName}`, { config, env });
+
+    it('matches snapshot', () => {
+      expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    });
   });
-});
 
-describe('ComputeStack alpha', () => {
-  const app = new cdk.App();
-  const stack = new ComputeStack(app, 'TestComputeStack', { config, env });
+  describe(`ComputeStack ${stageName}`, () => {
+    const app = new cdk.App();
+    const stack = new ComputeStack(app, `TestComputeStack-${stageName}`, { config, env });
 
-  it('matches snapshot', () => {
-    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    it('matches snapshot', () => {
+      expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    });
   });
-});
 
-describe('ApiStack alpha', () => {
-  const app = new cdk.App();
-  const stack = new ApiStack(app, 'TestApiStack', { config, env });
+  describe(`ApiStack ${stageName}`, () => {
+    const app = new cdk.App();
+    const stack = new ApiStack(app, `TestApiStack-${stageName}`, { config, env });
 
-  it('matches snapshot', () => {
-    expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    it('matches snapshot', () => {
+      expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    });
   });
-});
+}
