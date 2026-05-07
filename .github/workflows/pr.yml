@@ -3,6 +3,8 @@ name: PR Validation
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 concurrency:
   group: pr-${{ github.head_ref }}
@@ -36,12 +38,28 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Smithy CLI
+      - name: Install Smithy CLI and pre-populate Maven cache
         run: |
           curl -sL https://github.com/smithy-lang/smithy/releases/download/1.50.0/smithy-cli-linux-x86_64.zip \
             -o /tmp/smithy-cli.zip
           unzip -q /tmp/smithy-cli.zip -d /tmp/smithy-cli
           echo "/tmp/smithy-cli/smithy-cli-linux-x86_64/bin" >> $GITHUB_PATH
+          # Pre-populate ~/.m2 so smithy validate never hits the network at build time.
+          # The smithy maven block resolves these even for validate; without them it fails.
+          SMITHY_VER=1.50.0
+          BASE="https://repo1.maven.org/maven2/software/amazon/smithy"
+          M2="$HOME/.m2/repository/software/amazon/smithy"
+          for artifact in \
+            smithy-model smithy-utils smithy-aws-traits \
+            smithy-aws-apigateway-openapi smithy-openapi smithy-validation-model \
+            smithy-diff smithy-build smithy-jsonschema smithy-openapi-traits \
+            smithy-aws-apigateway-traits smithy-cli smithy-syntax smithy-jmespath; do
+            mkdir -p "$M2/$artifact/$SMITHY_VER"
+            for ext in jar pom; do
+              curl -fsSL "$BASE/$artifact/$SMITHY_VER/$artifact-$SMITHY_VER.$ext" \
+                -o "$M2/$artifact/$SMITHY_VER/$artifact-$SMITHY_VER.$ext"
+            done
+          done
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -92,8 +110,8 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: mikepenz/action-junit-report@v4
         with:
-          name: Java Unit Tests
-          path: lambda-handlers/build/test-results/test/*.xml
-          reporter: java-junit
+          report_paths: lambda-handlers/build/test-results/test/*.xml
+          check_name: Java Unit Tests
+          fail_on_failure: true

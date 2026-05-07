@@ -8,6 +8,9 @@
             "software.amazon.smithy:smithy-aws-apigateway-openapi:1.50.0",
             "software.amazon.smithy:smithy-openapi:1.50.0",
             "software.amazon.smithy:smithy-validation-model:1.50.0"
+        ],
+        "repositories": [
+            { "url": "https://repo1.maven.org/maven2" }
         ]
     },
     "projections": {

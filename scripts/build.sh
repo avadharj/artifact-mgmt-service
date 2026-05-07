@@ -25,8 +25,8 @@ if [[ "${JAVA_HOME:-}" == *"jdk-25"* || "$(java -version 2>&1 | awk -F'"' '/vers
   fi
 fi
 
-echo "==> [1/3] Building Smithy model..."
-(cd "$ROOT/smithy-model" && smithy build)
+echo "==> [1/3] Validating Smithy model..."
+(cd "$ROOT/smithy-model" && smithy validate)
 
 echo "==> [2/3] Building Lambda handlers..."
 (cd "$ROOT/lambda-handlers" && ./gradlew build)
