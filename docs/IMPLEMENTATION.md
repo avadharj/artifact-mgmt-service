@@ -143,6 +143,8 @@ operation CreateModel {
 - The error envelope shape is reused across operations via mixin (no duplication).
 - Negative test: a malformed `ModelName` (e.g. `Fraud_Detector`) fails Smithy lint.
 
+> **Handoff note (implemented):** `ServiceError` mixin lives in `common.smithy`. The `@sensitive` trait must be applied to a standalone type, not to a member — Smithy 2.0 rejects `@sensitive` on struct members directly. All error shapes use `with [ServiceError]` mixin syntax. `smithy validate` (not `smithy build`) is used in CI to avoid downloading the Maven plugin JARs — the `smithy-build.json` has a `repositories` block pointing at Maven Central so the validate step can resolve its own deps.
+
 ---
 
 ## Story 1.3 — Smithy model: ModelVersion resource [M]
@@ -239,6 +241,8 @@ enum VersionStatus { PENDING, READY, DELETED, FAILED }
 - `idempotencyKey` rejects non-UUID input at Smithy validation time.
 - `uploadUrl` carries `@sensitive`.
 
+> **Handoff note (implemented):** `GetLatestVersion` is in `collectionOperations` (not `operations`) on `ModelVersion` because it only takes `modelName` and has no `version` identifier in the path — Smithy requires collection operations for operations that don't address a specific resource instance. `ConfirmVersion` is in `operations` (has both identifiers). `@sensitive` is on the `PresignedUrl` string type, not the member — Smithy 2.0 does not allow `@sensitive` on struct members.
+
 ---
 
 ## Story 1.4 — Smithy build pipeline: OpenAPI + Python SDK + Java SDK [M]
@@ -260,6 +264,8 @@ enum VersionStatus { PENDING, READY, DELETED, FAILED }
 - `pip install build/python-sdk/dist/*.whl` into a fresh venv succeeds; `python -c "import artifact_mgmt_client"` works.
 - OpenAPI output validates against the OpenAPI 3.0 schema (`openapi-generator-cli validate`).
 - The Java SDK JAR has a `module-info.class` and exports `com.anthropic.artifactmgmt.client.*`.
+
+> **Handoff note (implemented):** The npm wrapper (`@openapitools/openapi-generator-cli`) is NOT used to run the generator. The `Makefile` downloads `openapi-generator-cli-7.9.0.jar` directly from Maven Central to `build/openapi-generator-cli.jar` and invokes `java -jar` directly. This bypasses the wrapper's hidden preflight `exec()` call that was intercepting stderr and crashing. The generator version is 7.9.0 (not 7.4.0 — AdaCodegen was broken in 7.4.0). No `--add-modules` JVM flags are needed. The JAR path is the Make variable `$(OPENAPI_GENERATOR_JAR)`.
 
 ---
 
@@ -289,6 +295,8 @@ enum VersionStatus { PENDING, READY, DELETED, FAILED }
 - Failure on any step fails the workflow (no `continue-on-error`).
 - Test reports show in PR summary.
 - Re-running the workflow on an unchanged PR completes <2 min from cache.
+
+> **Handoff note (implemented):** Java 21 (Corretto) is used for Gradle / Lambda handler builds. A separate `Set up Java 11 (Corretto)` step runs immediately before `make sdk` and overrides `JAVA_HOME`/`PATH` inline for that step only. This is required because the Caffeine version bundled in openapi-generator 7.9.0 needs `sun.misc.Unsafe`, which is absent from stripped Corretto 21 CI images but accessible in Java 11 classpath mode with no flags. Test results are published via `mikepenz/action-junit-report@v4` (not dorny — dorny requires artifacts to be uploaded first). Smithy Maven deps are pre-downloaded into `~/.m2` during the install step so `smithy validate` never hits the network mid-build.
 
 ---
 
@@ -339,6 +347,8 @@ export const STAGES: Record<string, StageConfig> = {
 - Snapshot tests in `infra-cdk/test/` pin the synthesized template per stage.
 - Tagging: every resource carries `Stage`, `Service=ArtifactMgmt`, `Owner=arjun`.
 
+> **Handoff note (implemented):** Snapshot tests live in `infra-cdk/test/infra-cdk.test.ts` and cover all four stages. They must be updated with `npm test -- -u` whenever CDK resources change intentionally — failing to do so will fail CI. The `StageConfig` interface has `lambdaMemoryMB` and `lambdaProvisionedConcurrency` fields in addition to what's in the spec above.
+
 ---
 
 ## Story 2.2 — DynamoDB tables and GSIs [M]
@@ -384,6 +394,8 @@ versionsTable.addGlobalSecondaryIndex({
 - `idempotency-gsi` and `status-created-gsi` both present with correct projections.
 - For prod: provisioned capacity with autoscaling 5–500 RCU/WCU targeting 70%.
 - CDK snapshot test verifies the structure.
+
+> **Handoff note (implemented):** `status-created-gsi` uses `ProjectionType.INCLUDE` with `nonKeyAttributes: ['s3_key', 'idempotency_key']` (not KEYS_ONLY — the spec description is slightly inconsistent; the note "KEYS_ONLY + s3_key + idempotency_key" means INCLUDE with those two extras). Autoscaling is applied to all 8 targets (table read, table write, idempotency-gsi read, idempotency-gsi write, status-created-gsi read, status-created-gsi write × both tables) for gamma and prod only. Both tables use `TableEncryption.AWS_MANAGED`.
 
 ---
 
@@ -898,6 +910,8 @@ public record IncrementResult(int newMajor, int newMinor, int expectedCurrentMaj
 - First-version case (model exists, `latest_major=0` and `latest_minor=0`): treated as a minor bump → produces `(0, 1)`. Decision point: do we want first version to be `1.0` or `0.1`? **Pick `1.0`.** Implementation: `ModelDao.create` sets initial `latest_major=1`, `latest_minor=-1` (so the first minor bump produces `(1, 0)`). Document this in code comments.
 - All branches return immediately; no DDB calls in this class.
 
+> **Handoff note (not yet implemented):** The spec says `ModelDao.create` sets initial `latest_major=1, latest_minor=-1` so the first minor bump produces `(1, 0)`. Do NOT initialize to `(0, 0)` — that would make the first version `(0, 1)` which is wrong. The `CLAUDE.md` "Subtleties" section has detail on this. This is the trickiest invariant in the whole codebase.
+
 **Acceptance criteria:**
 - Minor bump: `next(3, 4, empty) = (3, 5)`.
 - Equal-major: `next(3, 4, of(3)) = (3, 5)`.
@@ -1030,6 +1044,8 @@ private CreateVersionOutput createVersion(CreateVersionInput input, RequestConte
 - Unknown model name → 404 ModelNotFound.
 
 > **Open question for replay:** the upload URL has a 1-hour expiry. If a client replays after 30 min, do we return the original (now half-expired) URL or re-sign? **Decision: store the response without the URL, re-sign on every replay** so the client always gets a fresh URL. Log this in the design comments.
+
+> **Handoff note (not yet implemented):** The idempotency store for `CreateVersion` is the Versions row itself (idempotency_key GSI), not a separate table. The stored idempotency record must NOT include the upload URL — only the version and status. On replay, look up the Version row and re-sign a fresh presigned PUT URL. This is a hard correctness requirement (expired URLs break replays).
 
 ---
 
