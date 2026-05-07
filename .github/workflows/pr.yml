@@ -82,6 +82,13 @@ jobs:
           key: smithy-${{ hashFiles('smithy-model/smithy-build.json') }}
           restore-keys: smithy-
 
+      - name: Cache openapi-generator JAR
+        uses: actions/cache@v4
+        with:
+          path: build/openapi-generator-cli.jar
+          key: openapi-generator-7.9.0
+          restore-keys: openapi-generator-
+
       - name: Install root npm dependencies
         run: npm ci
 
@@ -97,8 +104,18 @@ jobs:
       - name: CDK unit tests
         run: cd infra-cdk && npm test
 
+      - name: Set up Java 11 (for SDK generation)
+        id: java11
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: "11"
+
       - name: SDK generation
-        run: make sdk
+        run: |
+          export JAVA_HOME="${{ steps.java11.outputs.path }}"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          make sdk
 
       - name: Upload Gradle test reports
         if: always()
