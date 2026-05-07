@@ -39,5 +39,8 @@ build/java-sdk-generated/
 build/python-sdk/
 java-sdk/build/
 
+# OpenAPI Generator CLI side-effects
+META-INF/
+
 # Claude Code
 CLAUDE.md

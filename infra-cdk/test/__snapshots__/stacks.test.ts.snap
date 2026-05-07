@@ -315,6 +315,19 @@ exports[`ComputeStack prod matches snapshot 1`] = `
 exports[`DataStack alpha matches snapshot 1`] = `
 {
   "Outputs": {
+    "ArtifactsBucketArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ArtifactsBucket2AAC5544",
+          "Arn",
+        ],
+      },
+    },
+    "ArtifactsBucketName": {
+      "Value": {
+        "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -350,6 +363,216 @@ exports[`DataStack alpha matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "ArtifactsBucket2AAC5544": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-alpha-123456789012",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart",
+              "Status": "Enabled",
+            },
+            {
+              "Id": "expire-noncurrent-versions",
+              "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 90,
+              },
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "ArtifactsLoggingBucket2F818C40",
+          },
+          "LogFilePrefix": "artifact-mgmt-alpha/",
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ArtifactsBucketPolicy852CB646": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsBucket2AAC5544",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "DenyNonTLS",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "ArtifactsLoggingBucket2F818C40": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-logs-alpha-123456789012",
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ArtifactsLoggingBucketPolicy8E145C17": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsLoggingBucket2F818C40",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsLoggingBucket2F818C40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsLoggingBucket2F818C40",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -496,6 +719,19 @@ exports[`DataStack alpha matches snapshot 1`] = `
 exports[`DataStack beta matches snapshot 1`] = `
 {
   "Outputs": {
+    "ArtifactsBucketArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ArtifactsBucket2AAC5544",
+          "Arn",
+        ],
+      },
+    },
+    "ArtifactsBucketName": {
+      "Value": {
+        "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -531,6 +767,216 @@ exports[`DataStack beta matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "ArtifactsBucket2AAC5544": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-beta-234567890123",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart",
+              "Status": "Enabled",
+            },
+            {
+              "Id": "expire-noncurrent-versions",
+              "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 90,
+              },
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "ArtifactsLoggingBucket2F818C40",
+          },
+          "LogFilePrefix": "artifact-mgmt-beta/",
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ArtifactsBucketPolicy852CB646": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsBucket2AAC5544",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "DenyNonTLS",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "ArtifactsLoggingBucket2F818C40": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-logs-beta-234567890123",
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ArtifactsLoggingBucketPolicy8E145C17": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsLoggingBucket2F818C40",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsLoggingBucket2F818C40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsLoggingBucket2F818C40",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -677,6 +1123,19 @@ exports[`DataStack beta matches snapshot 1`] = `
 exports[`DataStack gamma matches snapshot 1`] = `
 {
   "Outputs": {
+    "ArtifactsBucketArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ArtifactsBucket2AAC5544",
+          "Arn",
+        ],
+      },
+    },
+    "ArtifactsBucketName": {
+      "Value": {
+        "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -712,6 +1171,216 @@ exports[`DataStack gamma matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "ArtifactsBucket2AAC5544": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-gamma-345678901234",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart",
+              "Status": "Enabled",
+            },
+            {
+              "Id": "expire-noncurrent-versions",
+              "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 90,
+              },
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "ArtifactsLoggingBucket2F818C40",
+          },
+          "LogFilePrefix": "artifact-mgmt-gamma/",
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ArtifactsBucketPolicy852CB646": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsBucket2AAC5544",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "DenyNonTLS",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "ArtifactsLoggingBucket2F818C40": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-logs-gamma-345678901234",
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ArtifactsLoggingBucketPolicy8E145C17": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsLoggingBucket2F818C40",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsLoggingBucket2F818C40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsLoggingBucket2F818C40",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Retain",
       "Properties": {
@@ -1260,6 +1929,19 @@ exports[`DataStack gamma matches snapshot 1`] = `
 exports[`DataStack prod matches snapshot 1`] = `
 {
   "Outputs": {
+    "ArtifactsBucketArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ArtifactsBucket2AAC5544",
+          "Arn",
+        ],
+      },
+    },
+    "ArtifactsBucketName": {
+      "Value": {
+        "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -1295,6 +1977,216 @@ exports[`DataStack prod matches snapshot 1`] = `
     },
   },
   "Resources": {
+    "ArtifactsBucket2AAC5544": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-prod-456789012345",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7,
+              },
+              "Id": "abort-incomplete-multipart",
+              "Status": "Enabled",
+            },
+            {
+              "Id": "expire-noncurrent-versions",
+              "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 90,
+              },
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "ArtifactsLoggingBucket2F818C40",
+          },
+          "LogFilePrefix": "artifact-mgmt-prod/",
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ArtifactsBucketPolicy852CB646": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsBucket2AAC5544",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsBucket2AAC5544",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsBucket2AAC5544",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "DenyNonTLS",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "ArtifactsLoggingBucket2F818C40": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "artifact-mgmt-logs-prod-456789012345",
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ArtifactsLoggingBucketPolicy8E145C17": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "ArtifactsLoggingBucket2F818C40",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ArtifactsLoggingBucket2F818C40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ArtifactsLoggingBucket2F818C40",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Retain",
       "Properties": {
