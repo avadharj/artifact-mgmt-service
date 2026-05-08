@@ -22,7 +22,16 @@ if (!config) {
 const env = { account: config.account, region: config.region };
 
 const dataStack = new DataStack(app, `ArtifactMgmt-Data-${stageName}`, { config, env });
-const computeStack = new ComputeStack(app, `ArtifactMgmt-Compute-${stageName}`, { config, env });
+const computeStack = new ComputeStack(app, `ArtifactMgmt-Compute-${stageName}`, {
+  config,
+  env,
+  modelsTableName: dataStack.modelsTableName,
+  modelsTableArn: dataStack.modelsTableArn,
+  versionsTableName: dataStack.versionsTableName,
+  versionsTableArn: dataStack.versionsTableArn,
+  artifactsBucketName: dataStack.artifactsBucketName,
+  artifactsBucketArn: dataStack.artifactsBucketArn,
+});
 const apiStack = new ApiStack(app, `ArtifactMgmt-Api-${stageName}`, { config, env });
 
 [dataStack, computeStack, apiStack].forEach((stack) => {

@@ -165,6 +165,502 @@ exports[`ComputeStack alpha matches snapshot 1`] = `
       "Type": "AWS::SSM::Parameter::Value<String>",
     },
   },
+  "Resources": {
+    "AdminHandler935B2997": {
+      "DependsOn": [
+        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "AdminHandlerServiceRole211AB64E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "AdminHandlerDlq6894FD92",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-admin-alpha",
+        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "AdminHandlerServiceRole211AB64E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AdminHandlerDlq6894FD92": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-adminhandler-dlq-alpha",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AdminHandlerServiceRole211AB64E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AdminHandlerDlq6894FD92",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "Roles": [
+          {
+            "Ref": "AdminHandlerServiceRole211AB64E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ModelHandler00BEEB36": {
+      "DependsOn": [
+        "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "ModelHandlerServiceRole9324F888",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "ModelHandlerDlq9DFD9CB4",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-model-alpha",
+        "Handler": "com.anthropic.artifactmgmt.handlers.ModelHandler::handleRequest",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "ModelHandlerServiceRole9324F888",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ModelHandlerDlq9DFD9CB4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-modelhandler-dlq-alpha",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ModelHandlerServiceRole9324F888": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ModelHandlerServiceRoleDefaultPolicy57B06264": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ModelHandlerDlq9DFD9CB4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "Roles": [
+          {
+            "Ref": "ModelHandlerServiceRole9324F888",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "SweeperHandlerDCCDD5E3": {
+      "DependsOn": [
+        "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "SweeperHandlerServiceRole91A46B8C",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "SweeperHandlerDlq4BF9FF81",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "DRY_RUN": "false",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-sweeper-alpha",
+        "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
+        "MemorySize": 256,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "SweeperHandlerServiceRole91A46B8C",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "SweeperHandlerDlq4BF9FF81": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-sweeperhandler-dlq-alpha",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "SweeperHandlerServiceRole91A46B8C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "SweeperHandlerDlq4BF9FF81",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "Roles": [
+          {
+            "Ref": "SweeperHandlerServiceRole91A46B8C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "VersionHandler39BCDA43": {
+      "DependsOn": [
+        "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "VersionHandlerServiceRole0F060B8E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "VersionHandlerDlq728C418A",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-version-alpha",
+        "Handler": "com.anthropic.artifactmgmt.handlers.VersionHandler::handleRequest",
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "VersionHandlerServiceRole0F060B8E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "VersionHandlerDlq728C418A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-versionhandler-dlq-alpha",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionHandlerServiceRole0F060B8E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "VersionHandlerServiceRoleDefaultPolicy31D92B76": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VersionHandlerDlq728C418A",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "Roles": [
+          {
+            "Ref": "VersionHandlerServiceRole0F060B8E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
   "Rules": {
     "CheckBootstrapVersion": {
       "Assertions": [
@@ -202,6 +698,502 @@ exports[`ComputeStack beta matches snapshot 1`] = `
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AdminHandler935B2997": {
+      "DependsOn": [
+        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "AdminHandlerServiceRole211AB64E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-234567890123-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "AdminHandlerDlq6894FD92",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-admin-beta",
+        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
+        "MemorySize": 512,
+        "Role": {
+          "Fn::GetAtt": [
+            "AdminHandlerServiceRole211AB64E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AdminHandlerDlq6894FD92": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-adminhandler-dlq-beta",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AdminHandlerServiceRole211AB64E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AdminHandlerDlq6894FD92",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "Roles": [
+          {
+            "Ref": "AdminHandlerServiceRole211AB64E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ModelHandler00BEEB36": {
+      "DependsOn": [
+        "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "ModelHandlerServiceRole9324F888",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-234567890123-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "ModelHandlerDlq9DFD9CB4",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-model-beta",
+        "Handler": "com.anthropic.artifactmgmt.handlers.ModelHandler::handleRequest",
+        "MemorySize": 512,
+        "Role": {
+          "Fn::GetAtt": [
+            "ModelHandlerServiceRole9324F888",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ModelHandlerDlq9DFD9CB4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-modelhandler-dlq-beta",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ModelHandlerServiceRole9324F888": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ModelHandlerServiceRoleDefaultPolicy57B06264": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ModelHandlerDlq9DFD9CB4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "Roles": [
+          {
+            "Ref": "ModelHandlerServiceRole9324F888",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "SweeperHandlerDCCDD5E3": {
+      "DependsOn": [
+        "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "SweeperHandlerServiceRole91A46B8C",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-234567890123-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "SweeperHandlerDlq4BF9FF81",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "DRY_RUN": "false",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-sweeper-beta",
+        "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
+        "MemorySize": 512,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "SweeperHandlerServiceRole91A46B8C",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "SweeperHandlerDlq4BF9FF81": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-sweeperhandler-dlq-beta",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "SweeperHandlerServiceRole91A46B8C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "SweeperHandlerDlq4BF9FF81",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "Roles": [
+          {
+            "Ref": "SweeperHandlerServiceRole91A46B8C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "VersionHandler39BCDA43": {
+      "DependsOn": [
+        "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "VersionHandlerServiceRole0F060B8E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-234567890123-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "VersionHandlerDlq728C418A",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-version-beta",
+        "Handler": "com.anthropic.artifactmgmt.handlers.VersionHandler::handleRequest",
+        "MemorySize": 512,
+        "Role": {
+          "Fn::GetAtt": [
+            "VersionHandlerServiceRole0F060B8E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "VersionHandlerDlq728C418A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-versionhandler-dlq-beta",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionHandlerServiceRole0F060B8E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "VersionHandlerServiceRoleDefaultPolicy31D92B76": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VersionHandlerDlq728C418A",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "Roles": [
+          {
+            "Ref": "VersionHandlerServiceRole0F060B8E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
   },
   "Rules": {
@@ -243,6 +1235,514 @@ exports[`ComputeStack gamma matches snapshot 1`] = `
       "Type": "AWS::SSM::Parameter::Value<String>",
     },
   },
+  "Resources": {
+    "AdminHandler935B2997": {
+      "DependsOn": [
+        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "AdminHandlerServiceRole211AB64E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-345678901234-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "AdminHandlerDlq6894FD92",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-admin-gamma",
+        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "AdminHandlerServiceRole211AB64E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AdminHandlerDlq6894FD92": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-adminhandler-dlq-gamma",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AdminHandlerServiceRole211AB64E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AdminHandlerDlq6894FD92",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "Roles": [
+          {
+            "Ref": "AdminHandlerServiceRole211AB64E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ModelHandler00BEEB36": {
+      "DependsOn": [
+        "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "ModelHandlerServiceRole9324F888",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-345678901234-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "ModelHandlerDlq9DFD9CB4",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-model-gamma",
+        "Handler": "com.anthropic.artifactmgmt.handlers.ModelHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "ModelHandlerServiceRole9324F888",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ModelHandlerDlq9DFD9CB4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-modelhandler-dlq-gamma",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ModelHandlerServiceRole9324F888": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ModelHandlerServiceRoleDefaultPolicy57B06264": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ModelHandlerDlq9DFD9CB4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "Roles": [
+          {
+            "Ref": "ModelHandlerServiceRole9324F888",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "SweeperHandlerDCCDD5E3": {
+      "DependsOn": [
+        "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "SweeperHandlerServiceRole91A46B8C",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-345678901234-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "SweeperHandlerDlq4BF9FF81",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "DRY_RUN": "false",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-sweeper-gamma",
+        "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
+        "MemorySize": 1024,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "SweeperHandlerServiceRole91A46B8C",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "SweeperHandlerDlq4BF9FF81": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-sweeperhandler-dlq-gamma",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "SweeperHandlerServiceRole91A46B8C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "SweeperHandlerDlq4BF9FF81",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "Roles": [
+          {
+            "Ref": "SweeperHandlerServiceRole91A46B8C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "VersionHandler39BCDA43": {
+      "DependsOn": [
+        "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "VersionHandlerServiceRole0F060B8E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-345678901234-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "VersionHandlerDlq728C418A",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "DEBUG",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-version-gamma",
+        "Handler": "com.anthropic.artifactmgmt.handlers.VersionHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "VersionHandlerServiceRole0F060B8E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "VersionHandlerDlq728C418A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-versionhandler-dlq-gamma",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionHandlerServiceRole0F060B8E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "VersionHandlerServiceRoleDefaultPolicy31D92B76": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VersionHandlerDlq728C418A",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "Roles": [
+          {
+            "Ref": "VersionHandlerServiceRole0F060B8E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
   "Rules": {
     "CheckBootstrapVersion": {
       "Assertions": [
@@ -280,6 +1780,601 @@ exports[`ComputeStack prod matches snapshot 1`] = `
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AdminHandler935B2997": {
+      "DependsOn": [
+        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "AdminHandlerServiceRole211AB64E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-456789012345-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "AdminHandlerDlq6894FD92",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "INFO",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-admin-prod",
+        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "AdminHandlerServiceRole211AB64E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AdminHandlerCurrentVersion0098E6C306d6d45ac79dcb0533d6057dd674b87b": {
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AdminHandler935B2997",
+        },
+      },
+      "Type": "AWS::Lambda::Version",
+    },
+    "AdminHandlerDlq6894FD92": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-adminhandler-dlq-prod",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AdminHandlerLiveAlias5978048D": {
+      "Properties": {
+        "FunctionName": {
+          "Ref": "AdminHandler935B2997",
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "AdminHandlerCurrentVersion0098E6C306d6d45ac79dcb0533d6057dd674b87b",
+            "Version",
+          ],
+        },
+        "Name": "live",
+        "ProvisionedConcurrencyConfig": {
+          "ProvisionedConcurrentExecutions": 5,
+        },
+      },
+      "Type": "AWS::Lambda::Alias",
+    },
+    "AdminHandlerServiceRole211AB64E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AdminHandlerDlq6894FD92",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
+        "Roles": [
+          {
+            "Ref": "AdminHandlerServiceRole211AB64E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ModelHandler00BEEB36": {
+      "DependsOn": [
+        "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "ModelHandlerServiceRole9324F888",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-456789012345-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "ModelHandlerDlq9DFD9CB4",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "INFO",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-model-prod",
+        "Handler": "com.anthropic.artifactmgmt.handlers.ModelHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "ModelHandlerServiceRole9324F888",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ModelHandlerCurrentVersion35B336DA543110778140a4aede239e417adc7fad": {
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ModelHandler00BEEB36",
+        },
+      },
+      "Type": "AWS::Lambda::Version",
+    },
+    "ModelHandlerDlq9DFD9CB4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-modelhandler-dlq-prod",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ModelHandlerLiveAlias144BBA5E": {
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ModelHandler00BEEB36",
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "ModelHandlerCurrentVersion35B336DA543110778140a4aede239e417adc7fad",
+            "Version",
+          ],
+        },
+        "Name": "live",
+        "ProvisionedConcurrencyConfig": {
+          "ProvisionedConcurrentExecutions": 5,
+        },
+      },
+      "Type": "AWS::Lambda::Alias",
+    },
+    "ModelHandlerServiceRole9324F888": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ModelHandlerServiceRoleDefaultPolicy57B06264": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ModelHandlerDlq9DFD9CB4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ModelHandlerServiceRoleDefaultPolicy57B06264",
+        "Roles": [
+          {
+            "Ref": "ModelHandlerServiceRole9324F888",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "SweeperHandlerDCCDD5E3": {
+      "DependsOn": [
+        "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "SweeperHandlerServiceRole91A46B8C",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-456789012345-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "SweeperHandlerDlq4BF9FF81",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "DRY_RUN": "false",
+            "LOG_LEVEL": "INFO",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-sweeper-prod",
+        "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
+        "MemorySize": 1024,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "SweeperHandlerServiceRole91A46B8C",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "SweeperHandlerDlq4BF9FF81": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-sweeperhandler-dlq-prod",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "SweeperHandlerServiceRole91A46B8C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "SweeperHandlerDlq4BF9FF81",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "SweeperHandlerServiceRoleDefaultPolicy21D9C6E8",
+        "Roles": [
+          {
+            "Ref": "SweeperHandlerServiceRole91A46B8C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "VersionHandler39BCDA43": {
+      "DependsOn": [
+        "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "VersionHandlerServiceRole0F060B8E",
+      ],
+      "Properties": {
+        "Architectures": [
+          "arm64",
+        ],
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-456789012345-us-east-1",
+          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "VersionHandlerDlq728C418A",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "ARTIFACTS_BUCKET": "",
+            "LOG_LEVEL": "INFO",
+            "MODELS_TABLE": "",
+            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
+            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
+            "VERSIONS_TABLE": "",
+          },
+        },
+        "FunctionName": "artifact-mgmt-version-prod",
+        "Handler": "com.anthropic.artifactmgmt.handlers.VersionHandler::handleRequest",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "VersionHandlerServiceRole0F060B8E",
+            "Arn",
+          ],
+        },
+        "Runtime": "java21",
+        "SnapStart": {
+          "ApplyOn": "PublishedVersions",
+        },
+        "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "VersionHandlerCurrentVersionA84894B527d442171cfbebf6e57b66a59e5056ab": {
+      "Metadata": {
+        "aws:cdk:do-not-refactor": true,
+      },
+      "Properties": {
+        "FunctionName": {
+          "Ref": "VersionHandler39BCDA43",
+        },
+      },
+      "Type": "AWS::Lambda::Version",
+    },
+    "VersionHandlerDlq728C418A": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "artifact-mgmt-versionhandler-dlq-prod",
+        "SqsManagedSseEnabled": true,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VersionHandlerLiveAlias71DB4BC1": {
+      "Properties": {
+        "FunctionName": {
+          "Ref": "VersionHandler39BCDA43",
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "VersionHandlerCurrentVersionA84894B527d442171cfbebf6e57b66a59e5056ab",
+            "Version",
+          ],
+        },
+        "Name": "live",
+        "ProvisionedConcurrencyConfig": {
+          "ProvisionedConcurrentExecutions": 5,
+        },
+      },
+      "Type": "AWS::Lambda::Alias",
+    },
+    "VersionHandlerServiceRole0F060B8E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "VersionHandlerServiceRoleDefaultPolicy31D92B76": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VersionHandlerDlq728C418A",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "VersionHandlerServiceRoleDefaultPolicy31D92B76",
+        "Roles": [
+          {
+            "Ref": "VersionHandlerServiceRole0F060B8E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
   },
   "Rules": {
