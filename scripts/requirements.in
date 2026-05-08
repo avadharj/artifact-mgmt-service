@@ -1,0 +1,2 @@
+# Runtime dependencies for scripts/bake-check.py
+boto3

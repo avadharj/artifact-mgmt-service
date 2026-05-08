@@ -175,11 +175,25 @@ export class PipelineStack extends cdk.Stack {
 
     prod.addPre(new pipelines.ManualApprovalStep('PromoteToProd'));
 
-    prod.addPost(
-      new pipelines.ShellStep('BakeCheck', {
-        commands: ['python scripts/bake-check.py --stage prod --duration 3600'],
-      }),
-    );
+    // BakeCheck then publish: SDK publish only happens after a clean bake.
+    const prodBakeCheck = new pipelines.ShellStep('BakeCheck', {
+      commands: ['python scripts/bake-check.py --stage prod --duration 3600'],
+    });
+    // Publish Java + Python SDKs to CodeArtifact, tagged with the Smithy model version.
+    // The CodeArtifact domain/repo names are resolved from CDK context at pipeline-deploy time.
+    const publishSdks = new pipelines.ShellStep('PublishSdks', {
+      commands: [
+        'SMITHY_VERSION=$(python3 -c "import json; d=json.load(open(\'smithy-model/smithy-build.json\')); print(d[\'version\'])")',
+        // Java SDK → CodeArtifact Maven
+        'aws codeartifact login --tool mvn --domain artifact-mgmt --repository artifact-mgmt-sdk',
+        'cd java-sdk && ./gradlew publish -Pversion=$SMITHY_VERSION && cd ..',
+        // Python SDK → CodeArtifact PyPI
+        'aws codeartifact login --tool pip --domain artifact-mgmt --repository artifact-mgmt-sdk',
+        'cd build/python-sdk && pip install twine && twine upload --repository codeartifact dist/*.whl && cd ../..',
+      ],
+    });
+    publishSdks.addStepDependency(prodBakeCheck);
+    prod.addPost(prodBakeCheck, publishSdks);
 
     // Queue executions so concurrent pushes don't clobber in-flight deployments.
     // buildPipeline() must be called before accessing pipeline.pipeline (the L2).

@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'com.diffplug.spotless' version '6.25.0'
 }
 
@@ -14,6 +15,10 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 def jacksonVersion = '2.17.0'
@@ -37,6 +42,32 @@ sourceSets {
 jar {
     archiveBaseName = 'artifact-mgmt-client'
     archiveVersion = project.version
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = 'com.anthropic.artifactmgmt'
+            artifactId = 'artifact-mgmt-client'
+        }
+    }
+    repositories {
+        // CODEARTIFACT_REPO_URL is set by `aws codeartifact login --tool mvn`
+        // via the MAVEN_OPTS / settings.xml that login injects.
+        // Fallback to mavenLocal() for local development.
+        if (System.getenv('CODEARTIFACT_AUTH_TOKEN')) {
+            maven {
+                url System.getenv('CODEARTIFACT_REPO_URL') ?: ''
+                credentials {
+                    username 'aws'
+                    password System.getenv('CODEARTIFACT_AUTH_TOKEN') ?: ''
+                }
+            }
+        } else {
+            mavenLocal()
+        }
+    }
 }
 
 spotless {
