@@ -32,7 +32,13 @@ const computeStack = new ComputeStack(app, `ArtifactMgmt-Compute-${stageName}`, 
   artifactsBucketName: dataStack.artifactsBucketName,
   artifactsBucketArn: dataStack.artifactsBucketArn,
 });
-const apiStack = new ApiStack(app, `ArtifactMgmt-Api-${stageName}`, { config, env });
+const apiStack = new ApiStack(app, `ArtifactMgmt-Api-${stageName}`, {
+  config,
+  env,
+  modelHandlerArn: computeStack.modelHandlerArn,
+  versionHandlerArn: computeStack.versionHandlerArn,
+  adminHandlerArn: computeStack.adminHandlerArn,
+});
 
 [dataStack, computeStack, apiStack].forEach((stack) => {
   cdk.Tags.of(stack).add('Stage', stageName);

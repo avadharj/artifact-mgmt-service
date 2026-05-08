@@ -11,6 +11,20 @@ import { STAGES } from '../lib/stage-config';
 // A fresh Code instance is required per stack (CDK enforces one stack per asset).
 const stubCode = () => lambda.Code.fromAsset(path.join(__dirname, 'fixtures/stub-handler.zip'));
 
+// Minimal OpenAPI stub: keeps ApiStack snapshots independent of the Smithy build output.
+const STUB_OPENAPI = {
+  openapi: '3.0.2',
+  info: { title: 'stub', version: '1.0' },
+  paths: {
+    '/stub': {
+      get: {
+        operationId: 'StubOp',
+        responses: { '200': { description: 'ok' } },
+      },
+    },
+  },
+};
+
 const stageNames = ['alpha', 'beta', 'gamma', 'prod'] as const;
 
 for (const stageName of stageNames) {
@@ -41,7 +55,11 @@ for (const stageName of stageNames) {
 
   describe(`ApiStack ${stageName}`, () => {
     const app = new cdk.App();
-    const stack = new ApiStack(app, `TestApiStack-${stageName}`, { config, env });
+    const stack = new ApiStack(app, `TestApiStack-${stageName}`, {
+      config,
+      env,
+      openApiSpecOverride: STUB_OPENAPI,
+    });
 
     it('matches snapshot', () => {
       expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();

@@ -20,6 +20,11 @@ export interface ComputeStackProps extends cdk.StackProps {
 }
 
 export class ComputeStack extends cdk.Stack {
+  readonly modelHandlerArn: string;
+  readonly versionHandlerArn: string;
+  readonly adminHandlerArn: string;
+  readonly sweeperHandlerArn: string;
+
   constructor(scope: Construct, id: string, props: ComputeStackProps) {
     super(scope, id, props);
 
@@ -157,5 +162,10 @@ export class ComputeStack extends cdk.Stack {
     versionsTable?.grantReadWriteData(sweeperHandler);
     artifactsBucket?.grantRead(sweeperHandler);
     // SweeperHandler does not get provisioned concurrency — reservedConcurrentExecutions=1 is enough.
+
+    this.modelHandlerArn = modelHandler.functionArn;
+    this.versionHandlerArn = versionHandler.functionArn;
+    this.adminHandlerArn = adminHandler.functionArn;
+    this.sweeperHandlerArn = sweeperHandler.functionArn;
   }
 }
