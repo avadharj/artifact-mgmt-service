@@ -1,7 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import { StageConfig } from './stage-config';
@@ -162,6 +165,36 @@ export class ComputeStack extends cdk.Stack {
     versionsTable?.grantReadWriteData(sweeperHandler);
     artifactsBucket?.grantRead(sweeperHandler);
     // SweeperHandler does not get provisioned concurrency — reservedConcurrentExecutions=1 is enough.
+
+    // ── EventBridge hourly schedule ───────────────────────────────────────────
+
+    new events.Rule(this, 'SweeperSchedule', {
+      ruleName: `artifact-mgmt-sweeper-schedule-${cfg.stage}`,
+      schedule: events.Schedule.cron({ minute: '0' }),
+      targets: [
+        new targets.LambdaFunction(sweeperHandler, {
+          deadLetterQueue: sweeperDlq,
+          maxEventAge: cdk.Duration.minutes(30),
+          retryAttempts: 2,
+        }),
+      ],
+    });
+
+    // Alarm: any visible message in the sweeper DLQ is an anomaly worth paging.
+    // Actions (SNS/email) are wired in story 7.4; the alarm resource is established here.
+    new cloudwatch.Alarm(this, 'SweeperDlqAlarm', {
+      alarmName: `artifact-mgmt-sweeper-dlq-${cfg.stage}`,
+      alarmDescription: 'Sweeper DLQ has messages — sweeper invocation failed.',
+      metric: sweeperDlq.metricApproximateNumberOfMessagesVisible({
+        period: cdk.Duration.minutes(5),
+        statistic: 'Maximum',
+      }),
+      threshold: 0,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
 
     this.modelHandlerArn = modelHandler.functionArn;
     this.versionHandlerArn = versionHandler.functionArn;
