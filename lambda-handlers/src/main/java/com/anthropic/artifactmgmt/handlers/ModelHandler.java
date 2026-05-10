@@ -5,7 +5,9 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.anthropic.artifactmgmt.dao.ModelDao;
+import com.anthropic.artifactmgmt.exception.AccessDeniedException;
 import com.anthropic.artifactmgmt.exception.ModelAlreadyExistsException;
+import com.anthropic.artifactmgmt.exception.ModelNotFoundException;
 import com.anthropic.artifactmgmt.model.CreateModelRequest;
 import com.anthropic.artifactmgmt.model.ListModelItem;
 import com.anthropic.artifactmgmt.model.Model;
@@ -71,8 +73,9 @@ public class ModelHandler
         if ("POST".equals(method)) return createModel(event);
         if ("GET".equals(method)) return listModels(event);
       }
-      if ("/models/{modelName}".equals(resource) && "GET".equals(method)) {
-        return getModel(event);
+      if ("/models/{modelName}".equals(resource)) {
+        if ("GET".equals(method)) return getModel(event);
+        if ("DELETE".equals(method)) return deleteModel(event);
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
@@ -178,6 +181,28 @@ public class ModelHandler
     body.put("nextPageToken", result.nextPageToken());
 
     return readResponse(200, body);
+  }
+
+  // ── DeleteModel ──────────────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent deleteModel(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+
+    String owner = extractOwner(event);
+    boolean admin = isAdmin(event);
+
+    try {
+      modelDao.softDelete(modelName, owner, admin);
+      return new APIGatewayProxyResponseEvent().withStatusCode(204).withBody("");
+    } catch (ModelNotFoundException e) {
+      return errorResponse(404, "MODEL_NOT_FOUND", e.getMessage());
+    } catch (AccessDeniedException e) {
+      return errorResponse(403, "ACCESS_DENIED", e.getMessage());
+    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

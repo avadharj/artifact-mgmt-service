@@ -14,7 +14,9 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent.
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent.RequestIdentity;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.anthropic.artifactmgmt.dao.ModelDao;
+import com.anthropic.artifactmgmt.exception.AccessDeniedException;
 import com.anthropic.artifactmgmt.exception.ModelAlreadyExistsException;
+import com.anthropic.artifactmgmt.exception.ModelNotFoundException;
 import com.anthropic.artifactmgmt.model.Model;
 import com.anthropic.artifactmgmt.model.PaginatedResult;
 import java.util.List;
@@ -322,5 +324,83 @@ class ModelHandlerTest {
     handler.handleRequest(listModels("arn:aws:iam::123:user/alice", Map.of()), null);
 
     org.mockito.Mockito.verify(mockDao).list(50, null, false);
+  }
+
+  // ── DeleteModel tests (story 3.4) ─────────────────────────────────────────
+
+  private APIGatewayProxyRequestEvent deleteModel(String modelName, String callerArn) {
+    return event(
+        "/models/{modelName}",
+        "DELETE",
+        callerArn,
+        null,
+        Map.of(),
+        Map.of("modelName", modelName),
+        Map.of());
+  }
+
+  @Test
+  void givenOwnerCaller_whenDeleteModel_thenReturns204() throws Exception {
+    org.mockito.Mockito.doNothing()
+        .when(mockDao)
+        .softDelete(anyString(), anyString(), anyBoolean());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteModel("fraud-detector", "arn:aws:iam::123:user/alice"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+  }
+
+  @Test
+  void givenMissingModel_whenDeleteModel_thenReturns404() throws Exception {
+    org.mockito.Mockito.doThrow(new ModelNotFoundException("fraud-detector"))
+        .when(mockDao)
+        .softDelete(anyString(), anyString(), anyBoolean());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteModel("fraud-detector", "arn:aws:iam::123:user/alice"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("MODEL_NOT_FOUND");
+  }
+
+  @Test
+  void givenWrongOwner_whenDeleteModel_thenReturns403() throws Exception {
+    org.mockito.Mockito.doThrow(new AccessDeniedException("not owner"))
+        .when(mockDao)
+        .softDelete(anyString(), anyString(), anyBoolean());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteModel("fraud-detector", "arn:aws:iam::123:user/mallory"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(403);
+    assertThat(resp.getBody()).contains("ACCESS_DENIED");
+  }
+
+  @Test
+  void givenAlreadyDeletedModel_whenDeleteModel_thenReturns204Idempotent() throws Exception {
+    // softDelete is idempotent at the DAO level — no exception means 204
+    org.mockito.Mockito.doNothing()
+        .when(mockDao)
+        .softDelete(anyString(), anyString(), anyBoolean());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteModel("fraud-detector", "arn:aws:iam::123:user/alice"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+  }
+
+  @Test
+  void givenAdminCaller_whenDeleteModel_thenReturns204() throws Exception {
+    org.mockito.Mockito.doNothing()
+        .when(mockDao)
+        .softDelete(anyString(), anyString(), anyBoolean());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteModel("fraud-detector", ADMIN_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+    // Verify isAdmin=true was passed to the DAO
+    org.mockito.Mockito.verify(mockDao).softDelete("fraud-detector", "admin", true);
   }
 }
