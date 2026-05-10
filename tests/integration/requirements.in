@@ -1,0 +1,5 @@
+# Integration test dependencies
+boto3
+pytest
+requests
+requests-aws4auth
