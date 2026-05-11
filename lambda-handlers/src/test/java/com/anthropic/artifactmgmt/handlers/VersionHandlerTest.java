@@ -29,8 +29,12 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -40,6 +44,7 @@ class VersionHandlerTest {
   private ModelDao mockModelDao;
   private VersionDao mockVersionDao;
   private VersionIncrementer mockIncrementer;
+  private S3Client mockS3Client;
   private S3Presigner mockPresigner;
   private VersionHandler handler;
 
@@ -52,6 +57,7 @@ class VersionHandlerTest {
     mockModelDao = mock(ModelDao.class);
     mockVersionDao = mock(VersionDao.class);
     mockIncrementer = mock(VersionIncrementer.class);
+    mockS3Client = mock(S3Client.class);
     mockPresigner = mock(S3Presigner.class);
 
     // Default: no existing idempotency key
@@ -67,6 +73,7 @@ class VersionHandlerTest {
             mockModelDao,
             mockVersionDao,
             mockIncrementer,
+            mockS3Client,
             mockPresigner,
             BUCKET,
             MetricsPublisher.noOp());
@@ -282,5 +289,218 @@ class VersionHandlerTest {
 
     assertThat(resp.getStatusCode()).isEqualTo(400);
     assertThat(resp.getBody()).contains("VALIDATION_ERROR");
+  }
+
+  // ── confirmVersion helpers ────────────────────────────────────────────────
+
+  @SuppressWarnings("unchecked")
+  private APIGatewayProxyRequestEvent postConfirm(String modelName, String version, String body) {
+    APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
+    e.setResource("/models/{modelName}/versions/{version}/confirm");
+    e.setHttpMethod("POST");
+    e.setPathParameters(Map.of("modelName", modelName, "version", version));
+    e.setBody(body);
+    return e;
+  }
+
+  private Version versionWithStatus(String modelName, int major, int minor, VersionStatus status) {
+    return Version.builder()
+        .modelName(modelName)
+        .major(major)
+        .minor(minor)
+        .versionKey(VersionKey.encode(major, minor))
+        .s3Key(modelName + "/v" + major + "." + minor + "/weights.bin")
+        .status(status)
+        .depSnapshot("{}")
+        .trainingMetadata("{}")
+        .idempotencyKey("idem-key")
+        .createdAt(Instant.now().toString())
+        .createdBy("alice")
+        .build();
+  }
+
+  @SuppressWarnings("unchecked")
+  private void stubHeadObject(String s3Key, Long contentLength, String checksumSha256) {
+    HeadObjectResponse.Builder b = HeadObjectResponse.builder().contentLength(contentLength);
+    if (checksumSha256 != null) {
+      b.checksumSHA256(checksumSha256);
+    }
+    HeadObjectResponse head = b.build();
+    when(mockS3Client.headObject(any(Consumer.class))).thenReturn(head);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void stubHeadObjectNotFound() {
+    when(mockS3Client.headObject(any(Consumer.class)))
+        .thenThrow(NoSuchKeyException.builder().message("not found").build());
+  }
+
+  // ── AC: happy path confirm ────────────────────────────────────────────────
+
+  @Test
+  void givenPendingVersionAndS3Uploaded_whenConfirm_thenReturns200Ready() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    Version ready = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0))
+        .thenReturn(Optional.of(pending))
+        .thenReturn(Optional.of(ready));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 1024L, "abc123");
+
+    String body = "{\"sizeBytes\":1024,\"checksumSha256\":\"abc123\"}";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", body), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("READY");
+    verify(mockVersionDao)
+        .updateStatus("fraud-detector", 1, 0, VersionStatus.READY, VersionStatus.PENDING);
+  }
+
+  // ── AC: idempotent confirm when already READY ─────────────────────────────
+
+  @Test
+  void givenReadyVersion_whenConfirmAgain_thenReturns200Idempotent() {
+    Version ready = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(ready));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 1024L, "abc123");
+
+    String body = "{\"sizeBytes\":1024,\"checksumSha256\":\"abc123\"}";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", body), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("READY");
+    verify(mockVersionDao, never()).updateStatus(anyString(), anyInt(), anyInt(), any(), any());
+  }
+
+  // ── AC: 404 when version does not exist ───────────────────────────────────
+
+  @Test
+  void givenNoVersion_whenConfirm_thenReturns404VersionNotFound() {
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.empty());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", "{}"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("VERSION_NOT_FOUND");
+  }
+
+  // ── AC: 412 when version is DELETED or FAILED ─────────────────────────────
+
+  @Test
+  void givenDeletedVersion_whenConfirm_thenReturns412PreconditionFailed() {
+    Version deleted = versionWithStatus("fraud-detector", 1, 0, VersionStatus.DELETED);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(deleted));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", "{}"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(412);
+    assertThat(resp.getBody()).contains("PRECONDITION_FAILED");
+  }
+
+  // ── AC: 412 when version is FAILED ───────────────────────────────────────
+
+  @Test
+  void givenFailedVersion_whenConfirm_thenReturns412PreconditionFailed() {
+    Version failed = versionWithStatus("fraud-detector", 1, 0, VersionStatus.FAILED);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(failed));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", "{}"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(412);
+    assertThat(resp.getBody()).contains("PRECONDITION_FAILED");
+  }
+
+  // ── AC: 404 when S3 object not uploaded yet ───────────────────────────────
+
+  @Test
+  void givenPendingVersionButNoS3Upload_whenConfirm_thenReturns404UploadNotFound() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(pending));
+    stubHeadObjectNotFound();
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", "{}"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("UPLOAD_NOT_FOUND");
+  }
+
+  // ── AC: 409 when content-length mismatches ────────────────────────────────
+
+  @Test
+  void givenSizeMismatch_whenConfirm_thenReturns409ChecksumMismatch() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(pending));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 512L, null);
+
+    String body = "{\"sizeBytes\":1024}";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", body), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(409);
+    assertThat(resp.getBody()).contains("CHECKSUM_MISMATCH");
+    verify(mockVersionDao, never()).updateStatus(anyString(), anyInt(), anyInt(), any(), any());
+  }
+
+  // ── AC: 409 when SHA-256 mismatches ──────────────────────────────────────
+
+  @Test
+  void givenSha256Mismatch_whenConfirm_thenReturns409ChecksumMismatch() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(pending));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 1024L, "wrong-hash");
+
+    String body = "{\"sizeBytes\":1024,\"checksumSha256\":\"correct-hash\"}";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", body), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(409);
+    assertThat(resp.getBody()).contains("CHECKSUM_MISMATCH");
+    verify(mockVersionDao, never()).updateStatus(anyString(), anyInt(), anyInt(), any(), any());
+  }
+
+  // ── AC: metadata mirror written on confirm ────────────────────────────────
+
+  @Test
+  void givenSuccessfulConfirm_whenConfirm_thenMetadataMirrorWritten() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    Version ready = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0))
+        .thenReturn(Optional.of(pending))
+        .thenReturn(Optional.of(ready));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 1024L, null);
+
+    handler.handleRequest(postConfirm("fraud-detector", "1.0", "{\"sizeBytes\":1024}"), null);
+
+    verify(mockS3Client)
+        .putObject(any(Consumer.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
+  }
+
+  // ── AC: mirror failure is best-effort (still returns 200) ─────────────────
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void givenMirrorWriteFails_whenConfirm_thenStillReturns200() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    Version ready = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0))
+        .thenReturn(Optional.of(pending))
+        .thenReturn(Optional.of(ready));
+    stubHeadObject("fraud-detector/v1.0/weights.bin", 1024L, null);
+    when(mockS3Client.putObject(
+            any(Consumer.class), any(software.amazon.awssdk.core.sync.RequestBody.class)))
+        .thenThrow(new RuntimeException("S3 unavailable"));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postConfirm("fraud-detector", "1.0", "{\"sizeBytes\":1024}"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("READY");
+    verify(mockVersionDao)
+        .updateStatus("fraud-detector", 1, 0, VersionStatus.READY, VersionStatus.PENDING);
   }
 }

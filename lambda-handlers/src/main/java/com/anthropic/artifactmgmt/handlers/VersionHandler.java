@@ -10,26 +10,33 @@ import com.anthropic.artifactmgmt.dao.VersionKey;
 import com.anthropic.artifactmgmt.exception.InvalidMajorVersionException;
 import com.anthropic.artifactmgmt.exception.ModelNotFoundException;
 import com.anthropic.artifactmgmt.exception.VersionConflictException;
+import com.anthropic.artifactmgmt.model.ConfirmVersionRequest;
 import com.anthropic.artifactmgmt.model.CreateVersionRequest;
 import com.anthropic.artifactmgmt.model.CreateVersionResponse;
 import com.anthropic.artifactmgmt.model.Model;
 import com.anthropic.artifactmgmt.model.Version;
+import com.anthropic.artifactmgmt.model.VersionResponse;
 import com.anthropic.artifactmgmt.model.VersionStatus;
 import com.anthropic.artifactmgmt.version.IncrementResult;
 import com.anthropic.artifactmgmt.version.VersionIncrementer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -45,6 +52,7 @@ public class VersionHandler
   private final ModelDao modelDao;
   private final VersionDao versionDao;
   private final VersionIncrementer incrementer;
+  private final S3Client s3Client;
   private final S3Presigner s3Presigner;
   private final String bucket;
   private final MetricsPublisher metrics;
@@ -63,6 +71,12 @@ public class VersionHandler
     this.modelDao = new ModelDao(enhanced, System.getenv("MODELS_TABLE"));
     this.versionDao = new VersionDao(dynamo, System.getenv("VERSIONS_TABLE"));
     this.incrementer = new VersionIncrementer();
+    this.s3Client =
+        S3Client.builder()
+            .region(Region.of(region))
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .httpClient(UrlConnectionHttpClient.create())
+            .build();
     this.s3Presigner =
         S3Presigner.builder()
             .region(Region.of(region))
@@ -77,12 +91,14 @@ public class VersionHandler
       ModelDao modelDao,
       VersionDao versionDao,
       VersionIncrementer incrementer,
+      S3Client s3Client,
       S3Presigner s3Presigner,
       String bucket,
       MetricsPublisher metrics) {
     this.modelDao = modelDao;
     this.versionDao = versionDao;
     this.incrementer = incrementer;
+    this.s3Client = s3Client;
     this.s3Presigner = s3Presigner;
     this.bucket = bucket;
     this.metrics = metrics;
@@ -96,6 +112,10 @@ public class VersionHandler
     try {
       if ("/models/{modelName}/versions".equals(resource) && "POST".equals(method)) {
         return createVersion(event);
+      }
+      if ("/models/{modelName}/versions/{version}/confirm".equals(resource)
+          && "POST".equals(method)) {
+        return confirmVersion(event);
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
@@ -146,7 +166,6 @@ public class VersionHandler
               .build());
     }
 
-    // Resolve model
     Model model;
     try {
       model = modelDao.get(modelName).orElseThrow(() -> new ModelNotFoundException(modelName));
@@ -154,7 +173,6 @@ public class VersionHandler
       return errorResponse(404, "MODEL_NOT_FOUND", e.getMessage());
     }
 
-    // Compute next version
     IncrementResult incr;
     try {
       incr =
@@ -164,7 +182,6 @@ public class VersionHandler
       return errorResponse(400, "INVALID_MAJOR_VERSION", e.getMessage());
     }
 
-    // Atomically update the model's latest version counter
     try {
       modelDao.updateLatestVersion(
           modelName, incr.newMajor(), incr.newMinor(), incr.expectedCurrentMajor());
@@ -222,7 +239,153 @@ public class VersionHandler
             .build());
   }
 
+  // ── ConfirmVersion ────────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent confirmVersion(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    String versionParam = pathParams != null ? pathParams.get("version") : null;
+
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+    if (versionParam == null || versionParam.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "version path parameter is required");
+    }
+
+    int major;
+    int minor;
+    try {
+      String[] parts = versionParam.split("\\.");
+      if (parts.length != 2) throw new IllegalArgumentException("expected M.N format");
+      major = Integer.parseInt(parts[0]);
+      minor = Integer.parseInt(parts[1]);
+    } catch (Exception e) {
+      return errorResponse(400, "VALIDATION_ERROR", "version must be in M.N format");
+    }
+
+    ConfirmVersionRequest req;
+    try {
+      req = MAPPER.readValue(event.getBody(), ConfirmVersionRequest.class);
+    } catch (Exception e) {
+      return errorResponse(400, "VALIDATION_ERROR", "Invalid request body: " + e.getMessage());
+    }
+
+    // Fetch the version row
+    Optional<Version> found = versionDao.get(modelName, major, minor);
+    if (found.isEmpty()) {
+      return errorResponse(404, "VERSION_NOT_FOUND", "Version not found: " + versionParam);
+    }
+    Version version = found.get();
+
+    // Idempotent confirm: already READY — verify checksum then return current state
+    if (version.getStatus() == VersionStatus.READY) {
+      HeadObjectResponse head = headS3Object(version.getS3Key());
+      if (head == null) {
+        return errorResponse(404, "UPLOAD_NOT_FOUND", "S3 object not found for version");
+      }
+      if (!checksumMatches(head, req)) {
+        return errorResponse(409, "CHECKSUM_MISMATCH", "Checksum does not match stored object");
+      }
+      return jsonResponse(200, VersionResponse.from(version));
+    }
+
+    // Non-PENDING status (DELETED, FAILED) with no idempotent-replay → 412
+    if (version.getStatus() != VersionStatus.PENDING) {
+      return errorResponse(
+          412,
+          "PRECONDITION_FAILED",
+          "Version status is " + version.getStatus() + ", expected PENDING");
+    }
+
+    // Verify upload exists in S3
+    HeadObjectResponse head = headS3Object(version.getS3Key());
+    if (head == null) {
+      return errorResponse(
+          404, "UPLOAD_NOT_FOUND", "Upload not found — PUT to the upload URL first");
+    }
+
+    // Verify size — reject if client provided sizeBytes and S3 contentLength doesn't match
+    if (req.getSizeBytes() != null) {
+      if (head.contentLength() == null || !head.contentLength().equals(req.getSizeBytes())) {
+        return errorResponse(
+            409, "CHECKSUM_MISMATCH", "Content-Length mismatch: expected " + req.getSizeBytes());
+      }
+    }
+
+    // Verify SHA-256 — reject if client provided checksum and S3 checksum doesn't match
+    if (req.getChecksumSha256() != null) {
+      if (head.checksumSHA256() == null || !head.checksumSHA256().equals(req.getChecksumSha256())) {
+        return errorResponse(409, "CHECKSUM_MISMATCH", "SHA-256 checksum mismatch");
+      }
+    }
+
+    // Flip PENDING → READY
+    versionDao.updateStatus(modelName, major, minor, VersionStatus.READY, VersionStatus.PENDING);
+
+    metrics.recordVersionConfirmed();
+
+    Version confirmed =
+        versionDao
+            .get(modelName, major, minor)
+            .orElse(
+                Version.builder()
+                    .modelName(version.getModelName())
+                    .major(version.getMajor())
+                    .minor(version.getMinor())
+                    .versionKey(version.getVersionKey())
+                    .s3Key(version.getS3Key())
+                    .status(VersionStatus.READY)
+                    .depSnapshot(version.getDepSnapshot())
+                    .trainingMetadata(version.getTrainingMetadata())
+                    .idempotencyKey(version.getIdempotencyKey())
+                    .createdAt(version.getCreatedAt())
+                    .createdBy(version.getCreatedBy())
+                    .build());
+
+    // Write metadata mirror with confirmed (READY) state (best-effort)
+    writeMetadataMirror(confirmed);
+
+    return jsonResponse(200, VersionResponse.from(confirmed));
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  /** Returns null if the object does not exist in S3. */
+  private HeadObjectResponse headS3Object(String s3Key) {
+    try {
+      return s3Client.headObject(req -> req.bucket(bucket).key(s3Key));
+    } catch (NoSuchKeyException e) {
+      return null;
+    }
+  }
+
+  private boolean checksumMatches(HeadObjectResponse head, ConfirmVersionRequest req) {
+    if (req.getSizeBytes() != null) {
+      if (head.contentLength() == null || !head.contentLength().equals(req.getSizeBytes())) {
+        return false;
+      }
+    }
+    if (req.getChecksumSha256() != null) {
+      if (head.checksumSHA256() == null || !head.checksumSHA256().equals(req.getChecksumSha256())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void writeMetadataMirror(Version v) {
+    try {
+      String mirrorKey =
+          String.format("%s/v%d.%d/metadata.json", v.getModelName(), v.getMajor(), v.getMinor());
+      String metadata = MAPPER.writeValueAsString(VersionResponse.from(v));
+      s3Client.putObject(
+          req -> req.bucket(bucket).key(mirrorKey).contentType("application/json"),
+          RequestBody.fromString(metadata, StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      System.err.println("[warn] Failed to write metadata mirror: " + e.getMessage());
+    }
+  }
 
   private String presignPutUrl(String s3Key) {
     PutObjectPresignRequest presignRequest =
