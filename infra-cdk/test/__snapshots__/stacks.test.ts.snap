@@ -3875,6 +3875,19 @@ exports[`DataStack alpha matches snapshot 1`] = `
         "Ref": "ArtifactsBucket2AAC5544",
       },
     },
+    "IdempotencyTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "IdempotencyTable22A5A209",
+          "Arn",
+        ],
+      },
+    },
+    "IdempotencyTableName": {
+      "Value": {
+        "Ref": "IdempotencyTable22A5A209",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -4120,6 +4133,34 @@ exports[`DataStack alpha matches snapshot 1`] = `
       },
       "Type": "AWS::S3::BucketPolicy",
     },
+    "IdempotencyTable22A5A209": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "idempotency_key",
+            "KeyType": "HASH",
+          },
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-idempotency-alpha",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -4277,6 +4318,19 @@ exports[`DataStack beta matches snapshot 1`] = `
     "ArtifactsBucketName": {
       "Value": {
         "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
+    "IdempotencyTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "IdempotencyTable22A5A209",
+          "Arn",
+        ],
+      },
+    },
+    "IdempotencyTableName": {
+      "Value": {
+        "Ref": "IdempotencyTable22A5A209",
       },
     },
     "ModelsTableArn": {
@@ -4524,6 +4578,34 @@ exports[`DataStack beta matches snapshot 1`] = `
       },
       "Type": "AWS::S3::BucketPolicy",
     },
+    "IdempotencyTable22A5A209": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "idempotency_key",
+            "KeyType": "HASH",
+          },
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-idempotency-beta",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -4681,6 +4763,19 @@ exports[`DataStack gamma matches snapshot 1`] = `
     "ArtifactsBucketName": {
       "Value": {
         "Ref": "ArtifactsBucket2AAC5544",
+      },
+    },
+    "IdempotencyTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "IdempotencyTable22A5A209",
+          "Arn",
+        ],
+      },
+    },
+    "IdempotencyTableName": {
+      "Value": {
+        "Ref": "IdempotencyTable22A5A209",
       },
     },
     "ModelsTableArn": {
@@ -4927,6 +5022,133 @@ exports[`DataStack gamma matches snapshot 1`] = `
         },
       },
       "Type": "AWS::S3::BucketPolicy",
+    },
+    "IdempotencyTable22A5A209": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "idempotency_key",
+            "KeyType": "HASH",
+          },
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 10,
+          "WriteCapacityUnits": 10,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-idempotency-gamma",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "IdempotencyTableReadScalingTargetA46C1231": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "IdempotencyTable22A5A209",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "IdempotencyTableReadScalingTargetTrackingEBA57C0C": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaIdempotencyTableReadScalingTargetTracking18807AE4",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "IdempotencyTableReadScalingTargetA46C1231",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "IdempotencyTableWriteScalingTarget0DFC0E40": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "IdempotencyTable22A5A209",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::345678901234:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "IdempotencyTableWriteScalingTargetTracking8654781B": {
+      "Properties": {
+        "PolicyName": "TestDataStackgammaIdempotencyTableWriteScalingTargetTrackingE281BB0A",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "IdempotencyTableWriteScalingTarget0DFC0E40",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
     },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Retain",
@@ -5489,6 +5711,19 @@ exports[`DataStack prod matches snapshot 1`] = `
         "Ref": "ArtifactsBucket2AAC5544",
       },
     },
+    "IdempotencyTableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "IdempotencyTable22A5A209",
+          "Arn",
+        ],
+      },
+    },
+    "IdempotencyTableName": {
+      "Value": {
+        "Ref": "IdempotencyTable22A5A209",
+      },
+    },
     "ModelsTableArn": {
       "Value": {
         "Fn::GetAtt": [
@@ -5733,6 +5968,133 @@ exports[`DataStack prod matches snapshot 1`] = `
         },
       },
       "Type": "AWS::S3::BucketPolicy",
+    },
+    "IdempotencyTable22A5A209": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "idempotency_key",
+            "AttributeType": "S",
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "idempotency_key",
+            "KeyType": "HASH",
+          },
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 50,
+          "WriteCapacityUnits": 50,
+        },
+        "SSESpecification": {
+          "SSEEnabled": true,
+        },
+        "TableName": "artifact-mgmt-idempotency-prod",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true,
+        },
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "IdempotencyTableReadScalingTargetA46C1231": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "IdempotencyTable22A5A209",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "IdempotencyTableReadScalingTargetTrackingEBA57C0C": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodIdempotencyTableReadScalingTargetTracking5700B9B8",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "IdempotencyTableReadScalingTargetA46C1231",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    },
+    "IdempotencyTableWriteScalingTarget0DFC0E40": {
+      "Properties": {
+        "MaxCapacity": 500,
+        "MinCapacity": 5,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "table/",
+              {
+                "Ref": "IdempotencyTable22A5A209",
+              },
+            ],
+          ],
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":iam::456789012345:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable",
+            ],
+          ],
+        },
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+    },
+    "IdempotencyTableWriteScalingTargetTracking8654781B": {
+      "Properties": {
+        "PolicyName": "TestDataStackprodIdempotencyTableWriteScalingTargetTracking87B54F54",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "IdempotencyTableWriteScalingTarget0DFC0E40",
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization",
+          },
+          "TargetValue": 70,
+        },
+      },
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
     },
     "ModelsTableC5E7E44A": {
       "DeletionPolicy": "Retain",

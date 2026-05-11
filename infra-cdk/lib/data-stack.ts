@@ -14,6 +14,8 @@ export class DataStack extends cdk.Stack {
   readonly modelsTableArn: string;
   readonly versionsTableName: string;
   readonly versionsTableArn: string;
+  readonly idempotencyTableName: string;
+  readonly idempotencyTableArn: string;
   readonly artifactsBucketName: string;
   readonly artifactsBucketArn: string;
 
@@ -93,17 +95,41 @@ export class DataStack extends cdk.Stack {
         .scaleOnUtilization({ targetUtilizationPercent: 70 });
     }
 
+    // ── Idempotency records table ────────────────────────────────────────────
+
+    const idempotencyTable = new dynamodb.Table(this, 'IdempotencyTable', {
+      tableName: `artifact-mgmt-idempotency-${cfg.stage}`,
+      partitionKey: { name: 'idempotency_key', type: dynamodb.AttributeType.STRING },
+      billingMode: cfg.ddbBilling,
+      readCapacity: isProvisioned ? cfg.ddbProvisionedCapacity?.read : undefined,
+      writeCapacity: isProvisioned ? cfg.ddbProvisionedCapacity?.write : undefined,
+      timeToLiveAttribute: 'ttl',
+      removalPolicy: cfg.removalPolicy,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
+    if (isProvisioned) {
+      idempotencyTable.autoScaleReadCapacity({ minCapacity: 5, maxCapacity: 500 })
+        .scaleOnUtilization({ targetUtilizationPercent: 70 });
+      idempotencyTable.autoScaleWriteCapacity({ minCapacity: 5, maxCapacity: 500 })
+        .scaleOnUtilization({ targetUtilizationPercent: 70 });
+    }
+
     // ── Stack outputs (consumed by ComputeStack) ──────────────────────────────
 
     this.modelsTableName = modelsTable.tableName;
     this.modelsTableArn = modelsTable.tableArn;
     this.versionsTableName = versionsTable.tableName;
     this.versionsTableArn = versionsTable.tableArn;
+    this.idempotencyTableName = idempotencyTable.tableName;
+    this.idempotencyTableArn = idempotencyTable.tableArn;
 
     new cdk.CfnOutput(this, 'ModelsTableName', { value: modelsTable.tableName });
     new cdk.CfnOutput(this, 'ModelsTableArn', { value: modelsTable.tableArn });
     new cdk.CfnOutput(this, 'VersionsTableName', { value: versionsTable.tableName });
     new cdk.CfnOutput(this, 'VersionsTableArn', { value: versionsTable.tableArn });
+    new cdk.CfnOutput(this, 'IdempotencyTableName', { value: idempotencyTable.tableName });
+    new cdk.CfnOutput(this, 'IdempotencyTableArn', { value: idempotencyTable.tableArn });
 
     // ── S3 artifact bucket ───────────────────────────────────────────────────
 
