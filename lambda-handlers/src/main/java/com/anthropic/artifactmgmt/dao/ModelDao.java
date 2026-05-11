@@ -176,8 +176,11 @@ public class ModelDao {
               .conditionExpression(condition)
               .build());
     } catch (ConditionalCheckFailedException e) {
-      throw new VersionConflictException(
-          "Version conflict on model " + modelName + ": expected major " + expectedMajor);
+      // Re-read to get the actual current state so callers can report accurate conflict details.
+      ModelRecord current = table.getItem(Key.builder().partitionValue(modelName).build());
+      int actualMajor = current != null ? current.getLatestMajor() : expectedMajor;
+      int actualMinor = current != null ? current.getLatestMinor() : -1;
+      throw new VersionConflictException(actualMajor, actualMinor);
     }
   }
 
