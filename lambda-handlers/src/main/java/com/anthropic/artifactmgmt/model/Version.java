@@ -18,4 +18,8 @@ public class Version {
   Long ttl;
   String createdAt;
   String createdBy;
+  // Optional. When set at CreateVersion time, the presigned URL is bound to this checksum
+  // and S3 enforces it on upload. Persisted so idempotency-replay can re-sign with the same
+  // value (otherwise the second URL would not match the first).
+  String checksumSha256;
 }

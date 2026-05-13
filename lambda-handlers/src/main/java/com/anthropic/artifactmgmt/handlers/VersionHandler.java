@@ -35,6 +35,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ChecksumMode;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -154,7 +155,9 @@ public class VersionHandler
     Optional<Version> existing = versionDao.findByIdempotencyKey(req.getIdempotencyKey());
     if (existing.isPresent()) {
       Version v = existing.get();
-      String uploadUrl = presignPutUrl(v.getS3Key());
+      // Re-sign with the stored checksum so the replayed URL binds to the same value as the
+      // original. If the original was unbound, the replay is unbound too.
+      String uploadUrl = presignPutUrl(v.getS3Key(), v.getChecksumSha256());
       Instant expiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
       return jsonResponse(
           200,
@@ -217,10 +220,11 @@ public class VersionHandler
             .ttl(Instant.now().plus(24, ChronoUnit.HOURS).getEpochSecond())
             .createdAt(now)
             .createdBy(createdBy)
+            .checksumSha256(req.getChecksumSha256())
             .build();
     versionDao.put(v);
 
-    String uploadUrl = presignPutUrl(s3Key);
+    String uploadUrl = presignPutUrl(s3Key, req.getChecksumSha256());
     Instant expiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
 
     String framework =
@@ -354,7 +358,10 @@ public class VersionHandler
   /** Returns null if the object does not exist in S3. */
   private HeadObjectResponse headS3Object(String s3Key) {
     try {
-      return s3Client.headObject(req -> req.bucket(bucket).key(s3Key));
+      // ChecksumMode.ENABLED is required for S3 to return the stored SHA-256 on the response;
+      // without it, head.checksumSHA256() is always null even when S3 has the value.
+      return s3Client.headObject(
+          req -> req.bucket(bucket).key(s3Key).checksumMode(ChecksumMode.ENABLED));
     } catch (NoSuchKeyException e) {
       return null;
     }
@@ -387,12 +394,22 @@ public class VersionHandler
     }
   }
 
-  private String presignPutUrl(String s3Key) {
+  private String presignPutUrl(String s3Key, String checksumSha256) {
+    // When checksumSha256 is provided, bake the value into the presigned URL via
+    // PutObjectRequest.checksumSHA256 — S3 will reject the upload unless the client's bytes
+    // hash to the same value, and HeadObject will return the checksum so ConfirmVersion's
+    // strict verification path (Story 4.5) succeeds. When null, the URL is unbound and the
+    // checksum field on Confirm is effectively skipped.
     PutObjectPresignRequest presignRequest =
         PutObjectPresignRequest.builder()
             .signatureDuration(Duration.ofHours(1))
             .putObjectRequest(
-                req -> req.bucket(bucket).key(s3Key).contentType("application/octet-stream"))
+                req -> {
+                  req.bucket(bucket).key(s3Key).contentType("application/octet-stream");
+                  if (checksumSha256 != null && !checksumSha256.isBlank()) {
+                    req.checksumSHA256(checksumSha256);
+                  }
+                })
             .build();
     PresignedPutObjectRequest presigned = s3Presigner.presignPutObject(presignRequest);
     return presigned.url().toString();

@@ -217,6 +217,7 @@ public class VersionDao {
         .ttl(v.getTtl())
         .createdAt(v.getCreatedAt())
         .createdBy(v.getCreatedBy())
+        .checksumSha256(v.getChecksumSha256())
         .build();
   }
 
@@ -235,6 +236,7 @@ public class VersionDao {
         .ttl(r.getTtl())
         .createdAt(r.getCreatedAt())
         .createdBy(r.getCreatedBy())
+        .checksumSha256(r.getChecksumSha256())
         .build();
   }
 

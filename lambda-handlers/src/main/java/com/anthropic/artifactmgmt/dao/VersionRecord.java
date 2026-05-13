@@ -32,6 +32,7 @@ public class VersionRecord {
   private Long ttl;
   private String createdAt;
   private String createdBy;
+  private String checksumSha256;
 
   @DynamoDbPartitionKey
   @DynamoDbAttribute("model_name")
@@ -80,5 +81,10 @@ public class VersionRecord {
   @DynamoDbAttribute("created_by")
   public String getCreatedBy() {
     return createdBy;
+  }
+
+  @DynamoDbAttribute("checksum_sha256")
+  public String getChecksumSha256() {
+    return checksumSha256;
   }
 }

@@ -98,6 +98,9 @@ def api(integ_api_url, aws_auth):
         def post(self, path, **kwargs):
             return requests.post(self._url(path), auth=self._auth, **kwargs)
 
+        def put(self, path, **kwargs):
+            return requests.put(self._url(path), auth=self._auth, **kwargs)
+
         def get(self, path, **kwargs):
             return requests.get(self._url(path), auth=self._auth, **kwargs)
 

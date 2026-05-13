@@ -51,7 +51,9 @@ def model(api):
     api.delete(f"/models/{name}")
 
 
-def create_version(api, model_name, *, major=None, idempotency_key=None):
+def create_version(
+    api, model_name, *, major=None, idempotency_key=None, checksum_sha256=None
+):
     body = {
         "idempotencyKey": idempotency_key or new_idempotency_key(),
         "depSnapshot": make_dep_snapshot(),
@@ -59,14 +61,21 @@ def create_version(api, model_name, *, major=None, idempotency_key=None):
     }
     if major is not None:
         body["major"] = major
+    if checksum_sha256 is not None:
+        body["checksumSha256"] = checksum_sha256
     return api.post(f"/models/{model_name}/versions", json=body)
 
 
-def upload_blob(upload_url, blob):
-    """PUT bytes to a presigned S3 URL — the URL carries the signature."""
-    return requests.put(
-        upload_url, data=blob, headers={"Content-Type": "application/octet-stream"}
-    )
+def upload_blob(upload_url, blob, checksum_sha256=None):
+    """PUT bytes to a presigned S3 URL — the URL carries the signature.
+
+    If `checksum_sha256` is supplied, send it as the `x-amz-checksum-sha256` header
+    so S3 stores the checksum and HeadObject returns it on confirm (Story 4.7).
+    """
+    headers = {"Content-Type": "application/octet-stream"}
+    if checksum_sha256 is not None:
+        headers["x-amz-checksum-sha256"] = checksum_sha256
+    return requests.put(upload_url, data=blob, headers=headers)
 
 
 def sha256_b64(blob: bytes) -> str:
@@ -79,20 +88,27 @@ def sha256_b64(blob: bytes) -> str:
 
 
 def test_happy_path_create_upload_confirm(api, model):
-    resp = create_version(api, model)
+    """Story 4.7: client-computed SHA-256 is threaded through
+    CreateVersion → presigned PUT → ConfirmVersion end-to-end."""
+    blob = os.urandom(10 * 1024 * 1024)  # 10 MB
+    checksum = sha256_b64(blob)
+
+    # CreateVersion with the checksum — server presigns the URL bound to it.
+    resp = create_version(api, model, checksum_sha256=checksum)
     assert resp.status_code == 201, resp.text
     created = resp.json()
     assert created["version"] == "1.0"
     assert created["status"] == "PENDING"
     upload_url = created["uploadUrl"]
 
-    blob = os.urandom(10 * 1024 * 1024)  # 10 MB
-    put_resp = upload_blob(upload_url, blob)
+    # Client must send the same checksum as a header — S3 rejects on mismatch.
+    put_resp = upload_blob(upload_url, blob, checksum_sha256=checksum)
     assert put_resp.status_code in (200, 204), put_resp.text
 
-    confirm_resp = api.post(
+    # ConfirmVersion with the matching checksum — strict path from Story 4.5 succeeds.
+    confirm_resp = api.put(
         f"/models/{model}/versions/1.0/confirm",
-        json={"sizeBytes": len(blob), "checksumSha256": sha256_b64(blob)},
+        json={"sizeBytes": len(blob), "checksumSha256": checksum},
     )
     assert confirm_resp.status_code == 200, confirm_resp.text
     assert confirm_resp.json()["status"] == "READY"
@@ -100,6 +116,28 @@ def test_happy_path_create_upload_confirm(api, model):
     get_resp = api.get(f"/models/{model}/versions/1.0")
     assert get_resp.status_code == 200, get_resp.text
     assert get_resp.json()["status"] == "READY"
+
+
+# ── AC1b: Checksum is optional — same flow without binding the URL works too ──
+
+
+def test_happy_path_without_checksum(api, model):
+    """Story 4.7: when checksumSha256 is omitted from CreateVersion, the URL is
+    unbound; client PUTs without the header and confirms with size only."""
+    resp = create_version(api, model)  # no checksum_sha256
+    assert resp.status_code == 201, resp.text
+    upload_url = resp.json()["uploadUrl"]
+
+    blob = os.urandom(1024 * 1024)  # 1 MB
+    put_resp = upload_blob(upload_url, blob)  # no checksum header
+    assert put_resp.status_code in (200, 204), put_resp.text
+
+    confirm_resp = api.put(
+        f"/models/{model}/versions/1.0/confirm",
+        json={"sizeBytes": len(blob)},  # no checksumSha256
+    )
+    assert confirm_resp.status_code == 200, confirm_resp.text
+    assert confirm_resp.json()["status"] == "READY"
 
 
 # ── AC2: Major bump — list returns [v2.0, v1.0] newest-first ─────────────────
@@ -184,7 +222,7 @@ def test_confirm_without_upload_returns_404(api, model):
     r = create_version(api, model)
     assert r.status_code == 201
 
-    confirm = api.post(
+    confirm = api.put(
         f"/models/{model}/versions/1.0/confirm",
         json={"sizeBytes": 1024},
     )
@@ -196,16 +234,19 @@ def test_confirm_without_upload_returns_404(api, model):
 
 
 def test_confirm_with_bad_checksum_returns_409(api, model):
-    r = create_version(api, model)
+    """Bind the correct checksum at CreateVersion, upload correctly, then send a
+    wrong checksum to ConfirmVersion — strict verification (Story 4.5) must 409."""
+    blob = os.urandom(1024 * 1024)
+    real_checksum = sha256_b64(blob)
+
+    r = create_version(api, model, checksum_sha256=real_checksum)
     assert r.status_code == 201
     upload_url = r.json()["uploadUrl"]
+    assert upload_blob(upload_url, blob, checksum_sha256=real_checksum).status_code in (200, 204)
 
-    blob = os.urandom(1024 * 1024)
-    assert upload_blob(upload_url, blob).status_code in (200, 204)
-
-    confirm = api.post(
+    confirm = api.put(
         f"/models/{model}/versions/1.0/confirm",
-        json={"sizeBytes": len(blob), "checksumSha256": "wrong-hash"},
+        json={"sizeBytes": len(blob), "checksumSha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="},
     )
     assert confirm.status_code == 409, confirm.text
     assert confirm.json()["code"] == "CHECKSUM_MISMATCH"

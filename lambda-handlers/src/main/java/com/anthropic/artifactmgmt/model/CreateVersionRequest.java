@@ -15,4 +15,9 @@ public class CreateVersionRequest {
   String idempotencyKey;
   JsonNode depSnapshot;
   JsonNode trainingMetadata;
+  // Optional base64-encoded SHA-256 of the artifact bytes. When present, the server presigns
+  // the PUT URL with this exact value bound — S3 rejects the upload if the client's bytes
+  // don't hash to it. When absent, the upload URL is unbound and ConfirmVersion can only
+  // verify size (4.5 strict checksum path skipped).
+  String checksumSha256;
 }

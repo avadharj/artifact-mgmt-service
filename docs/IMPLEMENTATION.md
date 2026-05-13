@@ -1116,11 +1116,14 @@ private CreateVersionOutput createVersion(CreateVersionInput input, RequestConte
 **Files:**
 - `lambda-handlers/.../handlers/VersionHandler.java` — `presignPutUrl(...)`
 
-**Implementation notes:**
-- Add `.checksumAlgorithm(ChecksumAlgorithm.SHA256)` on the `PutObjectRequest` builder inside `presignPutObject`.
-- The presigned URL must also expose `x-amz-sdk-checksum-algorithm` as a signed header so the client knows to compute and send the checksum on PUT. Verify whether the SDK does this automatically when `checksumAlgorithm` is set.
-- The Python SDK (out of repo) is the eventual primary client — but `requests.put` with a raw `x-amz-checksum-sha256` header is the integration-test fallback. Document the header(s) the client must send.
-- No change to `ConfirmVersion` itself — it already reads `head.checksumSHA256()` correctly; we just need S3 to actually populate it.
+**Implementation notes (as implemented — original `ChecksumAlgorithm` approach failed; see below):**
+- `CreateVersionRequest` gains an optional `checksumSha256` field (base64-encoded SHA-256, computed client-side from the bytes to be uploaded).
+- When present, `presignPutUrl` binds the value via `PutObjectRequest.checksumSHA256(value)` — S3 enforces the exact value byte-for-byte at upload time and rejects mismatched bytes. Client sends `x-amz-checksum-sha256: <value>` as a header (it is in the SigV4 signed-header list because the SDK includes checksum-bound headers in the signature when the value is set at presign time).
+- When absent, the URL is unbound and the strict checksum path in `ConfirmVersion` is effectively skipped (HeadObject returns null → handler treats the field as "client did not opt in").
+- `Version` row persists `checksumSha256`; idempotency replay re-signs with the same stored value so the second URL is identical to the first.
+- `HeadObject` must request `ChecksumMode.ENABLED` for S3 to return the stored checksum on the response — without it, `head.checksumSHA256()` is always null even when S3 has the value.
+
+**Why the original `ChecksumAlgorithm.SHA256` approach didn't work:** Setting just `checksumAlgorithm` (without the value) declares intent and signs `x-amz-sdk-checksum-algorithm`, but S3 requires the actual `x-amz-checksum-sha256` header to be in the signed-header list at presign time. The SDK can't know that value at presign time, so for raw HTTP clients (not the SDK's chunked-encoding flow) the only viable pattern is value-binding at presign time — which means the client must compute the SHA-256 before calling CreateVersion.
 
 **Acceptance criteria:**
 - A version uploaded via the presigned URL with the SHA-256 header set returns a non-null `checksumSHA256` on subsequent `HeadObject`.
