@@ -45,7 +45,7 @@ public class ModelHandler
 
   /** Production constructor — reads config from environment. */
   public ModelHandler() {
-    String tableName = System.getenv("MODELS_TABLE_NAME");
+    String tableName = System.getenv("MODELS_TABLE");
     DynamoDbClient dynamo =
         DynamoDbClient.builder()
             .region(Region.of(System.getenv().getOrDefault("AWS_REGION", "us-east-1")))

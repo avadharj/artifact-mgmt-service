@@ -54,7 +54,7 @@ export class ComputeStack extends cdk.Stack {
 
     const codeAsset =
       props.lambdaCode ??
-      lambda.Code.fromAsset('../lambda-handlers/build/distributions/handlers.zip');
+      lambda.Code.fromAsset('../lambda-handlers/build/libs/handlers.jar');
     const snapStartConf = cfg.lambdaSnapStart
       ? lambda.SnapStartConf.ON_PUBLISHED_VERSIONS
       : undefined;
@@ -155,7 +155,9 @@ export class ComputeStack extends cdk.Stack {
       tracing: cfg.enableXRay ? lambda.Tracing.ACTIVE : lambda.Tracing.DISABLED,
       snapStart: snapStartConf,
       deadLetterQueue: sweeperDlq,
-      reservedConcurrentExecutions: 1,
+      // Alpha skips reserved concurrency to fit within new-account quota (10).
+      // Beta+ keeps the overlap guard since concurrent sweeps would corrupt state at scale.
+      ...(cfg.stage === 'alpha' ? {} : { reservedConcurrentExecutions: 1 }),
       environment: {
         ...commonEnv,
         DRY_RUN: 'false',

@@ -1462,7 +1462,6 @@ exports[`ComputeStack alpha matches snapshot 1`] = `
         "FunctionName": "artifact-mgmt-sweeper-alpha",
         "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
         "MemorySize": 256,
-        "ReservedConcurrentExecutions": 1,
         "Role": {
           "Fn::GetAtt": [
             "SweeperHandlerServiceRole91A46B8C",
