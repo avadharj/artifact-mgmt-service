@@ -36,6 +36,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -51,6 +53,8 @@ class VersionHandlerTest {
   private static final String BUCKET = "test-bucket";
   private static final String CALLER_ARN = "arn:aws:iam::123456789012:user/alice";
   private static final String UPLOAD_URL = "https://s3.amazonaws.com/test-bucket/key?presign=abc";
+  private static final String DOWNLOAD_URL =
+      "https://s3.amazonaws.com/test-bucket/key?presign=download";
 
   @BeforeEach
   void setUp() throws Exception {
@@ -63,10 +67,14 @@ class VersionHandlerTest {
     // Default: no existing idempotency key
     when(mockVersionDao.findByIdempotencyKey(anyString())).thenReturn(Optional.empty());
 
-    // Default presigner stub
+    // Default presigner stub — PUT (upload URL) and GET (download URL for Story 5.1).
     PresignedPutObjectRequest presigned = mock(PresignedPutObjectRequest.class);
     when(presigned.url()).thenReturn(new URL(UPLOAD_URL));
     when(mockPresigner.presignPutObject(any(PutObjectPresignRequest.class))).thenReturn(presigned);
+    PresignedGetObjectRequest presignedGet = mock(PresignedGetObjectRequest.class);
+    when(presignedGet.url()).thenReturn(new URL(DOWNLOAD_URL));
+    when(mockPresigner.presignGetObject(any(GetObjectPresignRequest.class)))
+        .thenReturn(presignedGet);
 
     handler =
         new VersionHandler(
@@ -503,5 +511,114 @@ class VersionHandlerTest {
     assertThat(resp.getBody()).contains("READY");
     verify(mockVersionDao)
         .updateStatus("fraud-detector", 1, 0, VersionStatus.READY, VersionStatus.PENDING);
+  }
+
+  // ── Story 5.1: GetVersion + GetLatestVersion ─────────────────────────────
+
+  private APIGatewayProxyRequestEvent getVersionEvent(String modelName, String version) {
+    APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
+    e.setResource("/models/{modelName}/versions/{version}");
+    e.setHttpMethod("GET");
+    e.setPathParameters(Map.of("modelName", modelName, "version", version));
+    return e;
+  }
+
+  private APIGatewayProxyRequestEvent getLatestVersionEvent(String modelName) {
+    APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
+    e.setResource("/models/{modelName}/versions/latest");
+    e.setHttpMethod("GET");
+    e.setPathParameters(Map.of("modelName", modelName));
+    return e;
+  }
+
+  @Test
+  void givenReadyVersion_whenGetVersion_thenReturns200WithDownloadUrl() {
+    Version ready = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(ready));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getVersionEvent("fraud-detector", "1.0"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("\"version\":\"1.0\"");
+    assertThat(resp.getBody()).contains("\"status\":\"READY\"");
+    assertThat(resp.getBody()).contains("downloadUrl");
+    assertThat(resp.getBody()).contains("downloadUrlExpiresAt");
+    verify(mockPresigner).presignGetObject(any(GetObjectPresignRequest.class));
+  }
+
+  @Test
+  void givenPendingVersion_whenGetVersion_thenReturns200WithoutDownloadUrl() {
+    Version pending = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(pending));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getVersionEvent("fraud-detector", "1.0"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("\"status\":\"PENDING\"");
+    // Story 5.1: download URL only populated for READY rows; bytes may not exist yet otherwise.
+    assertThat(resp.getBody()).doesNotContain("downloadUrl");
+    verify(mockPresigner, never()).presignGetObject(any(GetObjectPresignRequest.class));
+  }
+
+  @Test
+  void givenMissingVersion_whenGetVersion_thenReturns404() {
+    when(mockVersionDao.get("fraud-detector", 9, 9)).thenReturn(Optional.empty());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getVersionEvent("fraud-detector", "9.9"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("VERSION_NOT_FOUND");
+  }
+
+  @Test
+  void givenMalformedVersionParam_whenGetVersion_thenReturns400() {
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getVersionEvent("fraud-detector", "not-a-version"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(400);
+    assertThat(resp.getBody()).contains("VALIDATION_ERROR");
+  }
+
+  @Test
+  void givenLatestReadyExists_whenGetLatestVersion_thenReturns200WithDownloadUrl() {
+    Version latest = versionWithStatus("fraud-detector", 3, 7, VersionStatus.READY);
+    when(mockVersionDao.findLatestReady("fraud-detector")).thenReturn(Optional.of(latest));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getLatestVersionEvent("fraud-detector"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("\"version\":\"3.7\"");
+    assertThat(resp.getBody()).contains("\"status\":\"READY\"");
+    assertThat(resp.getBody()).contains("downloadUrl");
+    verify(mockPresigner).presignGetObject(any(GetObjectPresignRequest.class));
+  }
+
+  @Test
+  void givenNoReadyVersion_whenGetLatestVersion_thenReturns404() {
+    when(mockVersionDao.findLatestReady("fraud-detector")).thenReturn(Optional.empty());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(getLatestVersionEvent("fraud-detector"), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("VERSION_NOT_FOUND");
+  }
+
+  // Lock in the 1h TTL: inspect the GetObjectPresignRequest passed to the presigner.
+  @Test
+  void givenGetLatestVersion_whenPresigning_thenSignatureDurationIsOneHour() {
+    Version latest = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.findLatestReady("fraud-detector")).thenReturn(Optional.of(latest));
+
+    handler.handleRequest(getLatestVersionEvent("fraud-detector"), null);
+
+    org.mockito.ArgumentCaptor<GetObjectPresignRequest> captor =
+        org.mockito.ArgumentCaptor.forClass(GetObjectPresignRequest.class);
+    verify(mockPresigner).presignGetObject(captor.capture());
+    assertThat(captor.getValue().signatureDuration()).isEqualTo(java.time.Duration.ofHours(1));
   }
 }

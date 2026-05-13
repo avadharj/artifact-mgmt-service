@@ -204,6 +204,11 @@ structure GetVersionOutput {
     createdAt: Timestamp
 
     confirmedAt: Timestamp
+
+    /// Presigned S3 GET URL for the artifact bytes. TTL = 1h. Only populated when status = READY.
+    downloadUrl: PresignedUrl
+
+    downloadUrlExpiresAt: Timestamp
 }
 
 // ── GetLatestVersion ──────────────────────────────────────────────────────────
@@ -245,6 +250,13 @@ structure GetLatestVersionOutput {
     createdAt: Timestamp
 
     confirmedAt: Timestamp
+
+    /// Presigned S3 GET URL for the artifact bytes. TTL = 1h. Always populated (findLatestReady).
+    @required
+    downloadUrl: PresignedUrl
+
+    @required
+    downloadUrlExpiresAt: Timestamp
 }
 
 // ── ListVersions ──────────────────────────────────────────────────────────────

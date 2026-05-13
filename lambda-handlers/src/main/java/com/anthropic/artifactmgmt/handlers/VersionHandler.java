@@ -39,6 +39,8 @@ import software.amazon.awssdk.services.s3.model.ChecksumMode;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -117,6 +119,12 @@ public class VersionHandler
       if ("/models/{modelName}/versions/{version}/confirm".equals(resource)
           && "PUT".equals(method)) {
         return confirmVersion(event);
+      }
+      if ("/models/{modelName}/versions/latest".equals(resource) && "GET".equals(method)) {
+        return getLatestVersion(event);
+      }
+      if ("/models/{modelName}/versions/{version}".equals(resource) && "GET".equals(method)) {
+        return getVersion(event);
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
@@ -353,6 +361,65 @@ public class VersionHandler
     return jsonResponse(200, VersionResponse.from(confirmed));
   }
 
+  // ── GetVersion ────────────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent getVersion(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    String versionParam = pathParams != null ? pathParams.get("version") : null;
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+    if (versionParam == null || versionParam.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "version path parameter is required");
+    }
+
+    int major;
+    int minor;
+    try {
+      String[] parts = versionParam.split("\\.");
+      if (parts.length != 2) throw new IllegalArgumentException("expected M.N format");
+      major = Integer.parseInt(parts[0]);
+      minor = Integer.parseInt(parts[1]);
+    } catch (Exception e) {
+      return errorResponse(400, "VALIDATION_ERROR", "version must be in M.N format");
+    }
+
+    Optional<Version> found = versionDao.get(modelName, major, minor);
+    if (found.isEmpty()) {
+      return errorResponse(404, "VERSION_NOT_FOUND", "Version not found: " + versionParam);
+    }
+    Version v = found.get();
+    // Per Story 5.1: download URL scoped to GetObject only; only populate for READY rows since
+    // the bytes are guaranteed to exist there. PENDING/FAILED/DELETED return metadata with no URL.
+    String downloadUrl = null;
+    String expiresAt = null;
+    if (v.getStatus() == VersionStatus.READY) {
+      downloadUrl = presignGetUrl(v.getS3Key());
+      expiresAt = Instant.now().plus(1, ChronoUnit.HOURS).toString();
+    }
+    return jsonResponse(200, VersionResponse.fromWithDownload(v, MAPPER, downloadUrl, expiresAt));
+  }
+
+  // ── GetLatestVersion ──────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent getLatestVersion(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+
+    Optional<Version> latest = versionDao.findLatestReady(modelName);
+    if (latest.isEmpty()) {
+      return errorResponse(404, "VERSION_NOT_FOUND", "No READY version for model: " + modelName);
+    }
+    Version v = latest.get();
+    String downloadUrl = presignGetUrl(v.getS3Key());
+    String expiresAt = Instant.now().plus(1, ChronoUnit.HOURS).toString();
+    return jsonResponse(200, VersionResponse.fromWithDownload(v, MAPPER, downloadUrl, expiresAt));
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   /** Returns null if the object does not exist in S3. */
@@ -412,6 +479,17 @@ public class VersionHandler
                 })
             .build();
     PresignedPutObjectRequest presigned = s3Presigner.presignPutObject(presignRequest);
+    return presigned.url().toString();
+  }
+
+  /** Presigned S3 GetObject URL with 1h TTL — used by Get/GetLatestVersion (Story 5.1). */
+  private String presignGetUrl(String s3Key) {
+    GetObjectPresignRequest presignRequest =
+        GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofHours(1))
+            .getObjectRequest(req -> req.bucket(bucket).key(s3Key))
+            .build();
+    PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
     return presigned.url().toString();
   }
 
