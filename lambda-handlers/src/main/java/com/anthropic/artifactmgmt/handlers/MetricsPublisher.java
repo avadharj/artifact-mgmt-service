@@ -6,6 +6,13 @@ public interface MetricsPublisher {
 
   void recordVersionConfirmed();
 
+  /**
+   * Story 6.1: emitted by SweeperHandler once per orphan reconciled. `outcome` is "READY" or
+   * "FAILED" (the new status the orphan was flipped to). Becomes a CloudWatch dimension when
+   * Powertools EMF is wired in 7.1.
+   */
+  void recordOrphanSwept(String outcome);
+
   static MetricsPublisher noOp() {
     return new MetricsPublisher() {
       @Override
@@ -13,6 +20,9 @@ public interface MetricsPublisher {
 
       @Override
       public void recordVersionConfirmed() {}
+
+      @Override
+      public void recordOrphanSwept(String outcome) {}
     };
   }
 }
