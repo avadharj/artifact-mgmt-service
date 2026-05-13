@@ -1107,6 +1107,29 @@ private CreateVersionOutput createVersion(CreateVersionInput input, RequestConte
 
 ---
 
+## Story 4.7 — Presigned PUT requests SHA-256 checksum [S]
+
+**Description:** Wire `ChecksumAlgorithm=SHA256` into the presigned PUT URL produced by `CreateVersion` so S3 captures and stores the SHA-256 of the uploaded object. This unblocks the strict checksum verification path in `ConfirmVersion` (Story 4.5), which currently 409s whenever a client supplies `checksumSha256` because `HeadObject` returns null for `checksumSHA256`.
+
+**Background:** Found by smoke-testing Epic 4 against alpha on 2026-05-13. `VersionHandler.presignPutUrl` builds the `PutObjectPresignRequest` without specifying a checksum algorithm, so the client's PUT does not carry `x-amz-checksum-sha256`, and S3 has no SHA-256 to surface on subsequent HeadObject calls. With Story 4.5's strict verification (added at reviewer's request — fail if client provides checksum but S3 returns null), the end-to-end happy path with checksum is broken; clients today must omit `checksumSha256` from the confirm body.
+
+**Files:**
+- `lambda-handlers/.../handlers/VersionHandler.java` — `presignPutUrl(...)`
+
+**Implementation notes:**
+- Add `.checksumAlgorithm(ChecksumAlgorithm.SHA256)` on the `PutObjectRequest` builder inside `presignPutObject`.
+- The presigned URL must also expose `x-amz-sdk-checksum-algorithm` as a signed header so the client knows to compute and send the checksum on PUT. Verify whether the SDK does this automatically when `checksumAlgorithm` is set.
+- The Python SDK (out of repo) is the eventual primary client — but `requests.put` with a raw `x-amz-checksum-sha256` header is the integration-test fallback. Document the header(s) the client must send.
+- No change to `ConfirmVersion` itself — it already reads `head.checksumSHA256()` correctly; we just need S3 to actually populate it.
+
+**Acceptance criteria:**
+- A version uploaded via the presigned URL with the SHA-256 header set returns a non-null `checksumSHA256` on subsequent `HeadObject`.
+- `ConfirmVersion` with a matching `checksumSha256` in the body returns 200 (not 409).
+- `ConfirmVersion` with a mismatched `checksumSha256` still returns 409 (regression guard on Story 4.5's strict path).
+- Add an integration test in `tests/integration/test_versions.py` that uploads with the SHA-256 header set and confirms with a matching checksum — closes a hole in the existing happy-path test (which today only sends size, not checksum, exactly because of this bug).
+
+---
+
 # Epic 5 — Version read paths & deletion
 
 ## Story 5.1 — GetVersion and GetLatestVersion [S]
