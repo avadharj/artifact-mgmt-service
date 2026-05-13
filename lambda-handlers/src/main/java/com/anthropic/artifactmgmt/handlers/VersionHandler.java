@@ -149,6 +149,9 @@ public class VersionHandler
       if ("/models/{modelName}/versions/{version}".equals(resource) && "GET".equals(method)) {
         return getVersion(event);
       }
+      if ("/models/{modelName}/versions/{version}".equals(resource) && "DELETE".equals(method)) {
+        return deleteVersion(event);
+      }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
       System.err.println("Unhandled exception: " + e.getMessage());
@@ -500,6 +503,67 @@ public class VersionHandler
     } catch (Exception e) {
       return false;
     }
+  }
+
+  // ── DeleteVersion ─────────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent deleteVersion(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    String versionParam = pathParams != null ? pathParams.get("version") : null;
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+    if (versionParam == null || versionParam.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "version path parameter is required");
+    }
+
+    int major;
+    int minor;
+    try {
+      String[] parts = versionParam.split("\\.");
+      if (parts.length != 2) throw new IllegalArgumentException("expected M.N format");
+      major = Integer.parseInt(parts[0]);
+      minor = Integer.parseInt(parts[1]);
+    } catch (Exception e) {
+      return errorResponse(400, "VALIDATION_ERROR", "version must be in M.N format");
+    }
+
+    // Load the model for the owner check. Authz happens before any version read so 403 vs 404
+    // signal is consistent with other endpoints.
+    Optional<Model> modelOpt = modelDao.get(modelName);
+    if (modelOpt.isEmpty()) {
+      return errorResponse(404, "MODEL_NOT_FOUND", "Model not found: " + modelName);
+    }
+    Model model = modelOpt.get();
+
+    String caller = extractOwner(event);
+    boolean admin = isAdmin(event);
+    if (!admin && !caller.equals(model.getOwner())) {
+      return errorResponse(
+          403, "FORBIDDEN", "Only the model owner or an admin can delete versions");
+    }
+
+    Optional<Version> versionOpt = versionDao.get(modelName, major, minor);
+    if (versionOpt.isEmpty()) {
+      return errorResponse(404, "VERSION_NOT_FOUND", "Version not found: " + versionParam);
+    }
+    Version v = versionOpt.get();
+
+    // @idempotent on the Smithy operation: re-deleting an already-DELETED version returns 204.
+    if (v.getStatus() == VersionStatus.DELETED) {
+      return new APIGatewayProxyResponseEvent().withStatusCode(204);
+    }
+
+    try {
+      versionDao.updateStatus(modelName, major, minor, VersionStatus.DELETED, v.getStatus());
+    } catch (VersionConflictException e) {
+      // Lost a race against another writer (e.g. ConfirmVersion flipping PENDING→READY between
+      // our get and our updateStatus). Surface as 409 so the client can retry.
+      return errorResponse(409, "VERSION_CONFLICT", "Version status changed during delete");
+    }
+
+    return new APIGatewayProxyResponseEvent().withStatusCode(204);
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

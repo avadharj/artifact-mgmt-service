@@ -758,4 +758,143 @@ class VersionHandlerTest {
     verify(mockPresigner).presignGetObject(captor.capture());
     assertThat(captor.getValue().signatureDuration()).isEqualTo(java.time.Duration.ofHours(1));
   }
+
+  // ── Story 5.3: DeleteVersion ───────────────────────────────────────────────
+
+  private APIGatewayProxyRequestEvent deleteVersionEvent(
+      String modelName, String version, String callerArn) {
+    APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
+    e.setResource("/models/{modelName}/versions/{version}");
+    e.setHttpMethod("DELETE");
+    e.setPathParameters(Map.of("modelName", modelName, "version", version));
+    RequestIdentity identity = new RequestIdentity();
+    identity.setCaller(callerArn);
+    ProxyRequestContext ctx = new ProxyRequestContext();
+    ctx.setIdentity(identity);
+    e.setRequestContext(ctx);
+    return e;
+  }
+
+  @Test
+  void givenOwnerCaller_whenDeleteReadyVersion_thenReturns204AndFlipsStatus() {
+    Model model = modelAt("fraud-detector", 1, 0); // owner = "alice"
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+    Version v = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(v));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("fraud-detector", "1.0", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+    verify(mockVersionDao)
+        .updateStatus("fraud-detector", 1, 0, VersionStatus.DELETED, VersionStatus.READY);
+  }
+
+  @Test
+  void givenNonOwnerCaller_whenDeleteVersion_thenReturns403() {
+    Model model = modelAt("fraud-detector", 1, 0); // owner = "alice"
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+
+    String mallory = "arn:aws:iam::123456789012:user/mallory";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("fraud-detector", "1.0", mallory), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(403);
+    assertThat(resp.getBody()).contains("FORBIDDEN");
+    verify(mockVersionDao, never()).updateStatus(anyString(), anyInt(), anyInt(), any(), any());
+  }
+
+  @Test
+  void givenAdminCaller_whenDeleteVersion_thenReturns204RegardlessOfOwner() {
+    String adminArn = "arn:aws:iam::123456789012:role/Admins";
+    VersionHandler adminHandler =
+        new VersionHandler(
+            mockModelDao,
+            mockVersionDao,
+            mockIncrementer,
+            mockS3Client,
+            mockPresigner,
+            BUCKET,
+            MetricsPublisher.noOp(),
+            adminArn);
+
+    Model model = modelAt("fraud-detector", 1, 0); // owner = "alice"
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+    Version v = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(v));
+
+    APIGatewayProxyResponseEvent resp =
+        adminHandler.handleRequest(deleteVersionEvent("fraud-detector", "1.0", adminArn), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+    verify(mockVersionDao)
+        .updateStatus("fraud-detector", 1, 0, VersionStatus.DELETED, VersionStatus.READY);
+  }
+
+  @Test
+  void givenMissingModel_whenDeleteVersion_thenReturns404() {
+    when(mockModelDao.get("no-such-model")).thenReturn(Optional.empty());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("no-such-model", "1.0", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("MODEL_NOT_FOUND");
+    verify(mockVersionDao, never()).get(anyString(), anyInt(), anyInt());
+  }
+
+  @Test
+  void givenMissingVersion_whenDeleteVersion_thenReturns404() {
+    Model model = modelAt("fraud-detector", 1, 0);
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+    when(mockVersionDao.get("fraud-detector", 9, 9)).thenReturn(Optional.empty());
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("fraud-detector", "9.9", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(404);
+    assertThat(resp.getBody()).contains("VERSION_NOT_FOUND");
+  }
+
+  @Test
+  void givenAlreadyDeletedVersion_whenDeleteVersion_thenIdempotent204NoDdbWrite() {
+    Model model = modelAt("fraud-detector", 1, 0);
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+    Version v = versionWithStatus("fraud-detector", 1, 0, VersionStatus.DELETED);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(v));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("fraud-detector", "1.0", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(204);
+    verify(mockVersionDao, never()).updateStatus(anyString(), anyInt(), anyInt(), any(), any());
+  }
+
+  @Test
+  void givenRaceCondition_whenDeleteVersion_thenReturns409() {
+    Model model = modelAt("fraud-detector", 1, 0);
+    when(mockModelDao.get("fraud-detector")).thenReturn(Optional.of(model));
+    Version v = versionWithStatus("fraud-detector", 1, 0, VersionStatus.PENDING);
+    when(mockVersionDao.get("fraud-detector", 1, 0)).thenReturn(Optional.of(v));
+    org.mockito.Mockito.doThrow(new VersionConflictException("status changed"))
+        .when(mockVersionDao)
+        .updateStatus("fraud-detector", 1, 0, VersionStatus.DELETED, VersionStatus.PENDING);
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(deleteVersionEvent("fraud-detector", "1.0", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(409);
+    assertThat(resp.getBody()).contains("VERSION_CONFLICT");
+  }
+
+  @Test
+  void givenMalformedVersionParam_whenDeleteVersion_thenReturns400() {
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(
+            deleteVersionEvent("fraud-detector", "not-a-version", CALLER_ARN), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(400);
+    assertThat(resp.getBody()).contains("VALIDATION_ERROR");
+    verify(mockModelDao, never()).get(anyString());
+  }
 }
