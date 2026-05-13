@@ -295,9 +295,10 @@ class VersionHandlerTest {
 
   @SuppressWarnings("unchecked")
   private APIGatewayProxyRequestEvent postConfirm(String modelName, String version, String body) {
+    // ConfirmVersion is PUT per the Smithy contract (Story 4.5 alpha smoke test, 2026-05-13).
     APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
     e.setResource("/models/{modelName}/versions/{version}/confirm");
-    e.setHttpMethod("POST");
+    e.setHttpMethod("PUT");
     e.setPathParameters(Map.of("modelName", modelName, "version", version));
     e.setBody(body);
     return e;

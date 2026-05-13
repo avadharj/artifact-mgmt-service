@@ -114,7 +114,7 @@ public class VersionHandler
         return createVersion(event);
       }
       if ("/models/{modelName}/versions/{version}/confirm".equals(resource)
-          && "POST".equals(method)) {
+          && "PUT".equals(method)) {
         return confirmVersion(event);
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");

@@ -33,11 +33,17 @@ export class ComputeStack extends cdk.Stack {
 
     const cfg = props.config;
 
+    // fromTableAttributes with globalIndexes so grant*Data also covers /index/*
     const modelsTable = props.modelsTableArn
-      ? dynamodb.Table.fromTableArn(this, 'ImportedModelsTable', props.modelsTableArn)
+      ? dynamodb.Table.fromTableAttributes(this, 'ImportedModelsTable', {
+          tableArn: props.modelsTableArn,
+        })
       : undefined;
     const versionsTable = props.versionsTableArn
-      ? dynamodb.Table.fromTableArn(this, 'ImportedVersionsTable', props.versionsTableArn)
+      ? dynamodb.Table.fromTableAttributes(this, 'ImportedVersionsTable', {
+          tableArn: props.versionsTableArn,
+          globalIndexes: ['idempotency-gsi', 'status-created-gsi'],
+        })
       : undefined;
     const artifactsBucket = props.artifactsBucketArn
       ? s3.Bucket.fromBucketArn(this, 'ImportedArtifactsBucket', props.artifactsBucketArn)
@@ -112,7 +118,8 @@ export class ComputeStack extends cdk.Stack {
       deadLetterQueue: versionDlq,
       environment: commonEnv,
     });
-    modelsTable?.grantReadData(versionHandler);
+    // VersionHandler must update latest_major/latest_minor on the model row
+    modelsTable?.grantReadWriteData(versionHandler);
     versionsTable?.grantReadWriteData(versionHandler);
     artifactsBucket?.grantPut(versionHandler);
     artifactsBucket?.grantRead(versionHandler);

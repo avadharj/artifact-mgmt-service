@@ -106,7 +106,9 @@ public class ModelHandler
             .owner(owner)
             .frameworkHint(req.getFrameworkHint())
             .description(req.getDescription())
-            .latestMajor(0)
+            // latestMajor=1, latestMinor=-1 → first VersionIncrementer.next produces (1, 0),
+            // making the first user-visible version v1.0 per the spec invariant.
+            .latestMajor(1)
             .latestMinor(-1)
             .status("ACTIVE")
             .createdAt(now)

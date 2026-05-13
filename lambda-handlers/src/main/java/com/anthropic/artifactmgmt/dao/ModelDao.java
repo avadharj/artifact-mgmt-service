@@ -42,7 +42,7 @@ public class ModelDao {
   public Model putIfNotExists(Model model) throws ModelAlreadyExistsException {
     ModelRecord record = toRecord(model);
     Expression condition =
-        Expression.builder().expression("attribute_not_exists(modelName)").build();
+        Expression.builder().expression("attribute_not_exists(model_name)").build();
     try {
       table.putItem(
           PutItemEnhancedRequest.builder(ModelRecord.class)
@@ -164,7 +164,7 @@ public class ModelDao {
 
     Expression condition =
         Expression.builder()
-            .expression("latestMajor = :expectedMajor")
+            .expression("latest_major = :expectedMajor")
             .putExpressionValue(
                 ":expectedMajor", AttributeValue.fromN(String.valueOf(expectedMajor)))
             .build();

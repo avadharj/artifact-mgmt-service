@@ -66,11 +66,14 @@ class ModelDaoTest {
             .billingMode(BillingMode.PAY_PER_REQUEST)
             .attributeDefinitions(
                 AttributeDefinition.builder()
-                    .attributeName("modelName")
+                    .attributeName("model_name")
                     .attributeType(ScalarAttributeType.S)
                     .build())
             .keySchema(
-                KeySchemaElement.builder().attributeName("modelName").keyType(KeyType.HASH).build())
+                KeySchemaElement.builder()
+                    .attributeName("model_name")
+                    .keyType(KeyType.HASH)
+                    .build())
             .build());
 
     DynamoDbEnhancedClient enhanced =
