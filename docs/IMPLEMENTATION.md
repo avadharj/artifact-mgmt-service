@@ -29,6 +29,34 @@ Each stage has its own DDB tables, S3 bucket, Lambda functions, alarms, and dash
 
 ---
 
+## Local development setup
+
+A few non-obvious setup steps a fresh checkout will hit.
+
+**Smithy CLI must be on `$PATH`.** Neither `./scripts/build.sh` nor the husky pre-commit hook bundle Smithy — both shell out to a `smithy` binary. Install it once with:
+
+```
+curl -sL https://github.com/smithy-lang/smithy/releases/download/1.50.0/smithy-cli-darwin-aarch64.zip \
+  -o /tmp/smithy-cli.zip
+unzip -q /tmp/smithy-cli.zip -d ~/.local/share/
+ln -sf ~/.local/share/smithy-cli-darwin-aarch64/bin/smithy ~/bin/smithy
+```
+
+(Linux: swap `darwin-aarch64` for `linux-x86_64` — the same version used by `.github/workflows/pr.yml`.) The pre-commit hook adds `~/bin` and `/usr/local/bin` to `PATH`, so either location works.
+
+**Failure mode if Smithy is missing:** lint-staged runs `smithy validate` and `./gradlew spotlessCheck` in parallel; the smithy failure cancels spotless, and the surfaced error message is misleading — `failed without output (KILLED)` pointing at spotless. If you see that, check `which smithy` first.
+
+**Pre-commit gauntlet (run before every commit touching `lambda-handlers/` or `infra-cdk/`):**
+
+```
+cd lambda-handlers && ./gradlew spotlessApply spotlessCheck test
+cd ../infra-cdk && npm test && npx cdk synth -c stage=alpha
+```
+
+`npm test` matters even for code-only changes — `infra-cdk/test/stacks.test.ts` runs CDK snapshot tests across all four stages and any change to a stack (even a one-line stage-conditional) will diff one or more saved templates. Regenerate snapshots with `npm test -- -u` only after reading the diff and confirming the change is intentional. **The snapshot diff is the kind of CI failure that doesn't surface in `./gradlew test` and has bitten this repo twice.**
+
+---
+
 # Epic 1 — Project bootstrap & Smithy contract
 
 **Goal:** Lock the API contract before any handler code. Stand up the dev loop and CI.

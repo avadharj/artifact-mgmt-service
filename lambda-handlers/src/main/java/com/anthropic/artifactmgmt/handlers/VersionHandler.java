@@ -14,6 +14,7 @@ import com.anthropic.artifactmgmt.model.ConfirmVersionRequest;
 import com.anthropic.artifactmgmt.model.CreateVersionRequest;
 import com.anthropic.artifactmgmt.model.CreateVersionResponse;
 import com.anthropic.artifactmgmt.model.Model;
+import com.anthropic.artifactmgmt.model.PaginatedResult;
 import com.anthropic.artifactmgmt.model.Version;
 import com.anthropic.artifactmgmt.model.VersionResponse;
 import com.anthropic.artifactmgmt.model.VersionStatus;
@@ -52,6 +53,9 @@ public class VersionHandler
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
+  private static final int DEFAULT_LIST_LIMIT = 50;
+  private static final int MAX_LIST_LIMIT = 200;
+
   private final ModelDao modelDao;
   private final VersionDao versionDao;
   private final VersionIncrementer incrementer;
@@ -59,6 +63,7 @@ public class VersionHandler
   private final S3Presigner s3Presigner;
   private final String bucket;
   private final MetricsPublisher metrics;
+  private final String adminRoleArn;
 
   /** Production constructor — reads config from environment. */
   public VersionHandler() {
@@ -87,6 +92,7 @@ public class VersionHandler
             .build();
     this.bucket = System.getenv("ARTIFACTS_BUCKET");
     this.metrics = MetricsPublisher.noOp();
+    this.adminRoleArn = System.getenv().getOrDefault("ADMIN_ROLE_ARN", "");
   }
 
   /** Test constructor — accepts injected dependencies. */
@@ -98,6 +104,19 @@ public class VersionHandler
       S3Presigner s3Presigner,
       String bucket,
       MetricsPublisher metrics) {
+    this(modelDao, versionDao, incrementer, s3Client, s3Presigner, bucket, metrics, "");
+  }
+
+  /** Test constructor with adminRoleArn — used by Story 5.2 ListVersions tests. */
+  VersionHandler(
+      ModelDao modelDao,
+      VersionDao versionDao,
+      VersionIncrementer incrementer,
+      S3Client s3Client,
+      S3Presigner s3Presigner,
+      String bucket,
+      MetricsPublisher metrics,
+      String adminRoleArn) {
     this.modelDao = modelDao;
     this.versionDao = versionDao;
     this.incrementer = incrementer;
@@ -105,6 +124,7 @@ public class VersionHandler
     this.s3Presigner = s3Presigner;
     this.bucket = bucket;
     this.metrics = metrics;
+    this.adminRoleArn = adminRoleArn;
   }
 
   @Override
@@ -115,6 +135,9 @@ public class VersionHandler
     try {
       if ("/models/{modelName}/versions".equals(resource) && "POST".equals(method)) {
         return createVersion(event);
+      }
+      if ("/models/{modelName}/versions".equals(resource) && "GET".equals(method)) {
+        return listVersions(event);
       }
       if ("/models/{modelName}/versions/{version}/confirm".equals(resource)
           && "PUT".equals(method)) {
@@ -418,6 +441,65 @@ public class VersionHandler
     String downloadUrl = presignGetUrl(v.getS3Key());
     String expiresAt = Instant.now().plus(1, ChronoUnit.HOURS).toString();
     return jsonResponse(200, VersionResponse.fromWithDownload(v, MAPPER, downloadUrl, expiresAt));
+  }
+
+  // ── ListVersions ──────────────────────────────────────────────────────────
+
+  private APIGatewayProxyResponseEvent listVersions(APIGatewayProxyRequestEvent event) {
+    Map<String, String> pathParams = event.getPathParameters();
+    String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName == null || modelName.isBlank()) {
+      return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
+    }
+
+    Map<String, String> qs = event.getQueryStringParameters();
+    int limit = DEFAULT_LIST_LIMIT;
+    if (qs != null && qs.containsKey("maxResults")) {
+      try {
+        limit = Integer.parseInt(qs.get("maxResults"));
+      } catch (NumberFormatException e) {
+        return errorResponse(400, "VALIDATION_ERROR", "maxResults must be an integer");
+      }
+    }
+    if (limit <= 0) limit = DEFAULT_LIST_LIMIT;
+    limit = Math.min(limit, MAX_LIST_LIMIT);
+
+    String pageToken = qs != null ? qs.get("pageToken") : null;
+    boolean includePending = qs != null && "true".equalsIgnoreCase(qs.get("includePending"));
+    boolean includeDeletedRequested =
+        qs != null && "true".equalsIgnoreCase(qs.get("includeDeleted"));
+
+    // Spec: includeDeleted=true requires AdminRole — otherwise 403 (not silently ignored).
+    if (includeDeletedRequested && !isAdmin(event)) {
+      return errorResponse(403, "FORBIDDEN", "includeDeleted=true requires admin role");
+    }
+
+    PaginatedResult<Version> page =
+        versionDao.list(modelName, limit, pageToken, includePending, includeDeletedRequested);
+
+    java.util.List<Map<String, Object>> items = new java.util.ArrayList<>();
+    for (Version v : page.items()) {
+      Map<String, Object> item = new java.util.LinkedHashMap<>();
+      item.put("version", v.getMajor() + "." + v.getMinor());
+      item.put("status", v.getStatus());
+      item.put("createdAt", v.getCreatedAt());
+      items.add(item);
+    }
+
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("versions", items);
+    body.put("nextPageToken", page.nextPageToken());
+    return jsonResponse(200, body);
+  }
+
+  private boolean isAdmin(APIGatewayProxyRequestEvent event) {
+    if (adminRoleArn == null || adminRoleArn.isBlank()) return false;
+    try {
+      String caller = event.getRequestContext().getIdentity().getCaller();
+      return adminRoleArn.equals(caller);
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

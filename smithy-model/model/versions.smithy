@@ -284,8 +284,17 @@ structure ListVersionsInput {
     pageToken: PageToken
 
     @httpQuery("maxResults")
-    @range(min: 1, max: 100)
+    @range(min: 1, max: 200)
     maxResults: Integer
+
+    /// When true, PENDING versions are included in the response. Default: false.
+    @httpQuery("includePending")
+    includePending: Boolean
+
+    /// When true, DELETED versions are included. Requires the caller's IAM identity to match
+    /// ADMIN_ROLE_ARN — otherwise the request is rejected with 403.
+    @httpQuery("includeDeleted")
+    includeDeleted: Boolean
 }
 
 structure ListVersionsOutput {

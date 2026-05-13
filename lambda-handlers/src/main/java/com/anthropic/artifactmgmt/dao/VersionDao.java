@@ -83,6 +83,9 @@ public class VersionDao {
         QueryEnhancedRequest.builder()
             .queryConditional(
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(modelName).build()))
+            // Newest-first: SK is version_key (zero-padded MMMM.NNNN), so reverse lex order
+            // matches reverse semver order — Story 5.2 spec.
+            .scanIndexForward(false)
             .limit(limit);
 
     if (pageToken != null) {
@@ -93,6 +96,11 @@ public class VersionDao {
     List<Version> results = new ArrayList<>();
     String nextToken = null;
 
+    // Keep iterating DDB pages until we have `limit` post-filter items OR DDB runs out
+    // (lastEvaluatedKey null). Without this, when a DDB page is mostly PENDING/DELETED and the
+    // caller wants only READY, we'd return a short result with nextToken=null and the client
+    // would believe the list is exhausted — even though there might be hundreds more rows past
+    // the current page boundary. This was caught by the Story 5.2 reviewer.
     for (Page<VersionRecord> page : table.query(request)) {
       for (VersionRecord r : page.items()) {
         VersionStatus status = VersionStatus.valueOf(r.getStatus());
@@ -103,10 +111,20 @@ public class VersionDao {
           break;
         }
       }
-      if (results.size() >= limit && page.lastEvaluatedKey() != null) {
-        nextToken = encodePageToken(page.lastEvaluatedKey());
+      if (results.size() >= limit) {
+        // We filled the page. If DDB has more rows past this point, emit a token so the client
+        // can keep paging. Otherwise (rare: limit landed exactly on DDB's last row) leave null.
+        if (page.lastEvaluatedKey() != null) {
+          nextToken = encodePageToken(page.lastEvaluatedKey());
+        }
+        break;
       }
-      break;
+      // Page exhausted but we still need more items. If DDB has nothing further, we're done
+      // (genuine end of list — nextToken stays null). Otherwise the SdkIterable will fetch
+      // the next page automatically on the next loop iteration.
+      if (page.lastEvaluatedKey() == null) {
+        break;
+      }
     }
 
     return new PaginatedResult<>(results, nextToken);

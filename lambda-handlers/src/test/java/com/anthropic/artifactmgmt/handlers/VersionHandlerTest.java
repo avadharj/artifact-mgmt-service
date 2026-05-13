@@ -2,6 +2,7 @@ package com.anthropic.artifactmgmt.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -606,6 +607,142 @@ class VersionHandlerTest {
 
     assertThat(resp.getStatusCode()).isEqualTo(404);
     assertThat(resp.getBody()).contains("VERSION_NOT_FOUND");
+  }
+
+  // ── Story 5.2: ListVersions ───────────────────────────────────────────────
+
+  private APIGatewayProxyRequestEvent listVersionsEvent(
+      String modelName, Map<String, String> queryParams, String callerArn) {
+    APIGatewayProxyRequestEvent e = new APIGatewayProxyRequestEvent();
+    e.setResource("/models/{modelName}/versions");
+    e.setHttpMethod("GET");
+    e.setPathParameters(Map.of("modelName", modelName));
+    if (queryParams != null) e.setQueryStringParameters(queryParams);
+    if (callerArn != null) {
+      RequestIdentity identity = new RequestIdentity();
+      identity.setCaller(callerArn);
+      ProxyRequestContext ctx = new ProxyRequestContext();
+      ctx.setIdentity(identity);
+      e.setRequestContext(ctx);
+    }
+    return e;
+  }
+
+  private com.anthropic.artifactmgmt.model.PaginatedResult<Version> page(
+      java.util.List<Version> items, String nextToken) {
+    return new com.anthropic.artifactmgmt.model.PaginatedResult<>(items, nextToken);
+  }
+
+  @Test
+  void givenTwoReadyVersions_whenListVersions_thenReturns200NewestFirst() {
+    Version v20 = versionWithStatus("fraud-detector", 2, 0, VersionStatus.READY);
+    Version v10 = versionWithStatus("fraud-detector", 1, 0, VersionStatus.READY);
+    when(mockVersionDao.list("fraud-detector", 50, null, false, false))
+        .thenReturn(page(java.util.List.of(v20, v10), null));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(listVersionsEvent("fraud-detector", null, null), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    String body = resp.getBody();
+    // Newest-first: 2.0 must appear before 1.0 in the response array
+    assertThat(body.indexOf("\"version\":\"2.0\"")).isLessThan(body.indexOf("\"version\":\"1.0\""));
+    assertThat(body).contains("\"nextPageToken\":null");
+  }
+
+  @Test
+  void givenMaxResults_whenListVersions_thenLimitPassedToDao() {
+    when(mockVersionDao.list("fraud-detector", 10, null, false, false))
+        .thenReturn(page(java.util.List.of(), null));
+
+    handler.handleRequest(
+        listVersionsEvent("fraud-detector", Map.of("maxResults", "10"), null), null);
+
+    verify(mockVersionDao).list("fraud-detector", 10, null, false, false);
+  }
+
+  @Test
+  void givenMaxResultsOver200_whenListVersions_thenClampedTo200() {
+    when(mockVersionDao.list(
+            anyString(), org.mockito.ArgumentMatchers.eq(200), any(), anyBoolean(), anyBoolean()))
+        .thenReturn(page(java.util.List.of(), null));
+
+    handler.handleRequest(
+        listVersionsEvent("fraud-detector", Map.of("maxResults", "9999"), null), null);
+
+    verify(mockVersionDao).list("fraud-detector", 200, null, false, false);
+  }
+
+  @Test
+  void givenIncludePendingTrue_whenListVersions_thenFlagPassedToDao() {
+    when(mockVersionDao.list(
+            anyString(), anyInt(), any(), org.mockito.ArgumentMatchers.eq(true), anyBoolean()))
+        .thenReturn(page(java.util.List.of(), null));
+
+    handler.handleRequest(
+        listVersionsEvent("fraud-detector", Map.of("includePending", "true"), null), null);
+
+    verify(mockVersionDao).list("fraud-detector", 50, null, true, false);
+  }
+
+  @Test
+  void givenIncludeDeletedTrueWithoutAdmin_whenListVersions_thenReturns403() {
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(
+            listVersionsEvent("fraud-detector", Map.of("includeDeleted", "true"), CALLER_ARN),
+            null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(403);
+    assertThat(resp.getBody()).contains("FORBIDDEN");
+    verify(mockVersionDao, never()).list(anyString(), anyInt(), any(), anyBoolean(), anyBoolean());
+  }
+
+  @Test
+  void givenIncludeDeletedTrueWithAdmin_whenListVersions_thenFlagPassedToDao() throws Exception {
+    String adminArn = "arn:aws:iam::123456789012:role/Admins";
+    VersionHandler adminHandler =
+        new VersionHandler(
+            mockModelDao,
+            mockVersionDao,
+            mockIncrementer,
+            mockS3Client,
+            mockPresigner,
+            BUCKET,
+            MetricsPublisher.noOp(),
+            adminArn);
+    when(mockVersionDao.list(
+            anyString(), anyInt(), any(), anyBoolean(), org.mockito.ArgumentMatchers.eq(true)))
+        .thenReturn(page(java.util.List.of(), null));
+
+    APIGatewayProxyResponseEvent resp =
+        adminHandler.handleRequest(
+            listVersionsEvent("fraud-detector", Map.of("includeDeleted", "true"), adminArn), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    verify(mockVersionDao).list("fraud-detector", 50, null, false, true);
+  }
+
+  @Test
+  void givenPageToken_whenListVersions_thenTokenPassedThrough() {
+    when(mockVersionDao.list("fraud-detector", 50, "abc123", false, false))
+        .thenReturn(page(java.util.List.of(), "next-token"));
+
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(
+            listVersionsEvent("fraud-detector", Map.of("pageToken", "abc123"), null), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    assertThat(resp.getBody()).contains("\"nextPageToken\":\"next-token\"");
+  }
+
+  @Test
+  void givenMalformedMaxResults_whenListVersions_thenReturns400() {
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(
+            listVersionsEvent("fraud-detector", Map.of("maxResults", "abc"), null), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(400);
+    assertThat(resp.getBody()).contains("VALIDATION_ERROR");
   }
 
   // Lock in the 1h TTL: inspect the GetObjectPresignRequest passed to the presigner.

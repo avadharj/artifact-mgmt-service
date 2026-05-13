@@ -237,6 +237,39 @@ class VersionDaoTest {
     assertThat(page3.nextPageToken()).isNull();
   }
 
+  // ── Story 5.2 regression: filtering must not silently truncate listings ─
+
+  @Test
+  void givenMostlyPendingVersions_whenListExcludingPending_thenIteratesPagesUntilLimitFilled() {
+    // Newest-first: v1.9 READY, v1.8 READY, v1.7..v1.0 PENDING. With limit=3 and
+    // includePending=false, a naive implementation that only processes DDB's first page would
+    // return early with no nextToken — making the client think the list is exhausted when
+    // there are PENDING rows beyond. The DAO must keep iterating until limit is filled or
+    // DDB runs out. Walking pages until termination must yield both READY rows in newest-first
+    // order (cross-page).
+    dao.put(version("filter-model", 1, 9, VersionStatus.READY));
+    dao.put(version("filter-model", 1, 8, VersionStatus.READY));
+    for (int i = 0; i < 8; i++) {
+      dao.put(version("filter-model", 1, i, VersionStatus.PENDING));
+    }
+
+    java.util.List<Version> collected = new java.util.ArrayList<>();
+    String token = null;
+    int pages = 0;
+    do {
+      PaginatedResult<Version> p = dao.list("filter-model", 3, token, false, false);
+      collected.addAll(p.items());
+      token = p.nextPageToken();
+      pages++;
+      assertThat(pages).isLessThan(20); // termination guard
+    } while (token != null);
+
+    assertThat(collected).hasSize(2);
+    assertThat(collected).extracting(Version::getStatus).containsOnly(VersionStatus.READY);
+    assertThat(collected.get(0).getMinor()).isEqualTo(9);
+    assertThat(collected.get(1).getMinor()).isEqualTo(8);
+  }
+
   // ── findLatestReady ───────────────────────────────────────────────────────
 
   @Test
