@@ -10,6 +10,8 @@ import com.anthropic.artifactmgmt.model.VersionStatus;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -18,6 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ChecksumMode;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.lambda.powertools.logging.LoggingUtils;
 
 /**
  * Story 6.1 — hourly EventBridge-scheduled Lambda that reconciles PENDING version rows whose upload
@@ -35,6 +38,8 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  * DRY_RUN=true env var leaves DDB untouched but still emits the audit log line.
  */
 public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
+
+  private static final Logger logger = LogManager.getLogger(SweeperHandler.class);
 
   static final int BATCH_SIZE = 100;
   static final int MAX_PER_INVOCATION = 1000;
@@ -83,30 +88,36 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
 
   @Override
   public Void handleRequest(ScheduledEvent event, Context ctx) {
-    Instant cutoff = Instant.now().minus(ORPHAN_AGE);
-    int processed = 0;
+    // Top-level invocation context (Story 7.1). Cleared in finally so subsequent invocations
+    // on a warm container don't inherit stale keys from this one.
+    LoggingUtils.appendKey("operation", "sweep");
+    LoggingUtils.appendKey("dry_run", String.valueOf(dryRun));
+    try {
+      Instant cutoff = Instant.now().minus(ORPHAN_AGE);
+      int processed = 0;
 
-    while (processed < MAX_PER_INVOCATION) {
-      List<Version> orphans = versionDao.findOrphans(BATCH_SIZE, cutoff);
-      if (orphans.isEmpty()) break;
+      while (processed < MAX_PER_INVOCATION) {
+        List<Version> orphans = versionDao.findOrphans(BATCH_SIZE, cutoff);
+        if (orphans.isEmpty()) break;
 
-      for (Version v : orphans) {
-        if (processed >= MAX_PER_INVOCATION) break;
-        processOne(v);
-        processed++;
+        for (Version v : orphans) {
+          if (processed >= MAX_PER_INVOCATION) break;
+          processOne(v);
+          processed++;
+        }
+
+        // If the DAO returned fewer than BATCH_SIZE, there's nothing more to scan in this run.
+        if (orphans.size() < BATCH_SIZE) break;
       }
 
-      // If the DAO returned fewer than BATCH_SIZE, there's nothing more to scan in this run.
-      if (orphans.size() < BATCH_SIZE) break;
+      LoggingUtils.appendKey("processed", String.valueOf(processed));
+      logger.info("sweep_summary");
+      return null;
+    } finally {
+      LoggingUtils.removeKey("operation");
+      LoggingUtils.removeKey("dry_run");
+      LoggingUtils.removeKey("processed");
     }
-
-    System.out.println(
-        "{\"operation\":\"sweep\",\"event\":\"summary\",\"processed\":"
-            + processed
-            + ",\"dry_run\":"
-            + dryRun
-            + "}");
-    return null;
   }
 
   private void processOne(Version v) {
@@ -129,32 +140,42 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
       reason = "no-upload";
     }
 
-    auditLog(v, targetStatus, reason);
-
-    if (dryRun) {
-      // No DDB write, no metric — dry-run must not pollute CloudWatch alarms that drive
-      // operator alerts. The audit log line above captures the intended action.
-      return;
-    }
+    // Per-orphan keys appended so the audit + (optional) conflict log lines carry full context.
+    LoggingUtils.appendKey("model_name", v.getModelName());
+    LoggingUtils.appendKey("version", v.getMajor() + "." + v.getMinor());
+    LoggingUtils.appendKey("from_status", VersionStatus.PENDING.name());
+    LoggingUtils.appendKey("to_status", targetStatus.name());
+    LoggingUtils.appendKey("reason", reason);
 
     try {
-      versionDao.updateStatus(
-          v.getModelName(), v.getMajor(), v.getMinor(), targetStatus, VersionStatus.PENDING);
-    } catch (VersionConflictException e) {
-      // Lost a race against ConfirmVersion or another sweeper invocation — the row is no
-      // longer PENDING. That's the desired terminal state; nothing to do.
-      System.out.println(
-          "{\"operation\":\"sweep\",\"event\":\"conflict\",\"model_name\":\""
-              + v.getModelName()
-              + "\",\"version\":\""
-              + v.getMajor()
-              + "."
-              + v.getMinor()
-              + "\",\"reason\":\"status-changed-during-update\"}");
-      return;
-    }
+      logger.info(dryRun ? "sweep_action_dry_run" : "sweep_action");
 
-    metrics.recordOrphanSwept(targetStatus.name());
+      if (dryRun) {
+        // No DDB write, no metric — dry-run must not pollute CloudWatch alarms.
+        return;
+      }
+
+      try {
+        versionDao.updateStatus(
+            v.getModelName(), v.getMajor(), v.getMinor(), targetStatus, VersionStatus.PENDING);
+      } catch (VersionConflictException e) {
+        // Lost a race against ConfirmVersion or another sweeper invocation — the row is no
+        // longer PENDING. That's the desired terminal state; nothing to do.
+        LoggingUtils.appendKey("outcome", "conflict");
+        logger.warn("sweep_conflict status-changed-during-update");
+        return;
+      }
+
+      LoggingUtils.appendKey("outcome", targetStatus.name());
+      metrics.recordOrphanSwept(targetStatus.name());
+    } finally {
+      LoggingUtils.removeKey("model_name");
+      LoggingUtils.removeKey("version");
+      LoggingUtils.removeKey("from_status");
+      LoggingUtils.removeKey("to_status");
+      LoggingUtils.removeKey("reason");
+      LoggingUtils.removeKey("outcome");
+    }
   }
 
   /**
@@ -166,25 +187,5 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
     String stored = v.getChecksumSha256();
     if (stored == null || stored.isBlank()) return true;
     return stored.equals(head.checksumSHA256());
-  }
-
-  private void auditLog(Version v, VersionStatus to, String reason) {
-    // Structured single-line JSON so CloudWatch Insights / Powertools (Story 7.1) can parse.
-    String prefix = dryRun ? "[DRY] " : "";
-    System.out.println(
-        prefix
-            + "{\"operation\":\"sweep\",\"model_name\":\""
-            + v.getModelName()
-            + "\",\"version\":\""
-            + v.getMajor()
-            + "."
-            + v.getMinor()
-            + "\",\"from_status\":\"PENDING\",\"to_status\":\""
-            + to.name()
-            + "\",\"reason\":\""
-            + reason
-            + "\",\"dry_run\":"
-            + dryRun
-            + "}");
   }
 }

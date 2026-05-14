@@ -29,6 +29,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -44,9 +46,12 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.lambda.powertools.logging.LoggingUtils;
 
 public class VersionHandler
     implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+
+  private static final Logger logger = LogManager.getLogger(VersionHandler.class);
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper()
@@ -132,6 +137,11 @@ public class VersionHandler
       APIGatewayProxyRequestEvent event, Context ctx) {
     String resource = event.getResource();
     String method = event.getHttpMethod();
+    if (event.getRequestContext() != null && event.getRequestContext().getRequestId() != null) {
+      LoggingUtils.setCorrelationId(event.getRequestContext().getRequestId());
+    }
+    LoggingUtils.appendKey("http_method", method == null ? "" : method);
+    LoggingUtils.appendKey("resource", resource == null ? "" : resource);
     try {
       if ("/models/{modelName}/versions".equals(resource) && "POST".equals(method)) {
         return createVersion(event);
@@ -154,19 +164,32 @@ public class VersionHandler
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
-      System.err.println("Unhandled exception: " + e.getMessage());
+      LoggingUtils.appendKey("outcome", "error");
+      logger.error("unhandled_exception", e);
       return errorResponse(500, "INTERNAL_ERROR", "Internal server error");
+    } finally {
+      // Story 7.1: clear any keys appended during this invocation so warm containers don't
+      // leak context across requests. Be exhaustive — listing every key that any sub-handler
+      // might append.
+      LoggingUtils.removeKey("http_method");
+      LoggingUtils.removeKey("resource");
+      LoggingUtils.removeKey("outcome");
+      LoggingUtils.removeKey("model_name");
+      LoggingUtils.removeKey("version");
+      LoggingUtils.removeKey("operation");
     }
   }
 
   // ── CreateVersion ─────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent createVersion(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "create_version");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
+    LoggingUtils.appendKey("model_name", modelName);
 
     CreateVersionRequest req;
     try {
@@ -280,9 +303,12 @@ public class VersionHandler
   // ── ConfirmVersion ────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent confirmVersion(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "confirm_version");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
     String versionParam = pathParams != null ? pathParams.get("version") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
+    if (versionParam != null) LoggingUtils.appendKey("version", versionParam);
 
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
@@ -390,9 +416,12 @@ public class VersionHandler
   // ── GetVersion ────────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent getVersion(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "get_version");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
     String versionParam = pathParams != null ? pathParams.get("version") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
+    if (versionParam != null) LoggingUtils.appendKey("version", versionParam);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
@@ -430,8 +459,10 @@ public class VersionHandler
   // ── GetLatestVersion ──────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent getLatestVersion(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "get_latest_version");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
@@ -449,8 +480,10 @@ public class VersionHandler
   // ── ListVersions ──────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent listVersions(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "list_versions");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
@@ -508,9 +541,12 @@ public class VersionHandler
   // ── DeleteVersion ─────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent deleteVersion(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "delete_version");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
     String versionParam = pathParams != null ? pathParams.get("version") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
+    if (versionParam != null) LoggingUtils.appendKey("version", versionParam);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
@@ -603,7 +639,7 @@ public class VersionHandler
           req -> req.bucket(bucket).key(mirrorKey).contentType("application/json"),
           RequestBody.fromString(metadata, StandardCharsets.UTF_8));
     } catch (Exception e) {
-      System.err.println("[warn] Failed to write metadata mirror: " + e.getMessage());
+      logger.warn("metadata_mirror_write_failed", e);
     }
   }
 

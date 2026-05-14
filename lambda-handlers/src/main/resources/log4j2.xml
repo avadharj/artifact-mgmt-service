@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Powertools-for-Java logging config (Story 7.1).
+  Log level is driven by the LOG_LEVEL env var, defaulting to INFO.
+  Powertools' LambdaJsonLayout emits structured JSON to stdout — CloudWatch parses each line as
+  a queryable record. Keys added at runtime via LoggingUtils.appendKey() appear as top-level
+  fields. Sensitive fields (uploadUrl, idempotencyKey) must never be passed to appendKey —
+  redaction is by omission, not by post-filter.
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="JsonAppender" target="SYSTEM_OUT">
+      <LambdaJsonLayout compact="true" eventEol="true"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="com.anthropic.artifactmgmt" level="${env:LOG_LEVEL:-INFO}" additivity="false">
+      <AppenderRef ref="JsonAppender"/>
+    </Logger>
+    <Root level="${env:LOG_LEVEL:-INFO}">
+      <AppenderRef ref="JsonAppender"/>
+    </Root>
+  </Loggers>
+</Configuration>

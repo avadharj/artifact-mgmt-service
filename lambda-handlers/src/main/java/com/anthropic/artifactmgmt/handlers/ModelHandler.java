@@ -22,14 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.lambda.powertools.logging.LoggingUtils;
 
 public class ModelHandler
     implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+
+  private static final Logger logger = LogManager.getLogger(ModelHandler.class);
 
   static final String IDEMPOTENCY_KEY_HEADER = "X-Idempotency-Key";
   private static final int DEFAULT_LIST_LIMIT = 50;
@@ -68,6 +73,13 @@ public class ModelHandler
       APIGatewayProxyRequestEvent event, Context ctx) {
     String resource = event.getResource();
     String method = event.getHttpMethod();
+    // Story 7.1: structured context. correlationId pulled from API Gateway requestId so a
+    // single request can be traced across handler invocations and downstream services.
+    if (event.getRequestContext() != null && event.getRequestContext().getRequestId() != null) {
+      LoggingUtils.setCorrelationId(event.getRequestContext().getRequestId());
+    }
+    LoggingUtils.appendKey("http_method", method == null ? "" : method);
+    LoggingUtils.appendKey("resource", resource == null ? "" : resource);
     try {
       if ("/models".equals(resource)) {
         if ("POST".equals(method)) return createModel(event);
@@ -79,14 +91,22 @@ public class ModelHandler
       }
       return errorResponse(404, "NOT_FOUND", "Route not found");
     } catch (Exception e) {
-      System.err.println("Unhandled exception: " + e.getMessage());
+      LoggingUtils.appendKey("outcome", "error");
+      logger.error("unhandled_exception", e);
       return errorResponse(500, "INTERNAL_ERROR", "Internal server error");
+    } finally {
+      LoggingUtils.removeKey("http_method");
+      LoggingUtils.removeKey("resource");
+      LoggingUtils.removeKey("outcome");
+      LoggingUtils.removeKey("model_name");
+      LoggingUtils.removeKey("operation");
     }
   }
 
   // ── CreateModel ──────────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent createModel(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "create_model");
     CreateModelRequest req;
     try {
       req = MAPPER.readValue(event.getBody(), CreateModelRequest.class);
@@ -134,8 +154,10 @@ public class ModelHandler
   // ── GetModel ─────────────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent getModel(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "get_model");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }
@@ -157,6 +179,7 @@ public class ModelHandler
   // ── ListModels ───────────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent listModels(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "list_models");
     Map<String, String> qs = event.getQueryStringParameters();
 
     int limit = DEFAULT_LIST_LIMIT;
@@ -188,8 +211,10 @@ public class ModelHandler
   // ── DeleteModel ──────────────────────────────────────────────────────────────
 
   private APIGatewayProxyResponseEvent deleteModel(APIGatewayProxyRequestEvent event) {
+    LoggingUtils.appendKey("operation", "delete_model");
     Map<String, String> pathParams = event.getPathParameters();
     String modelName = pathParams != null ? pathParams.get("modelName") : null;
+    if (modelName != null) LoggingUtils.appendKey("model_name", modelName);
     if (modelName == null || modelName.isBlank()) {
       return errorResponse(400, "VALIDATION_ERROR", "modelName path parameter is required");
     }

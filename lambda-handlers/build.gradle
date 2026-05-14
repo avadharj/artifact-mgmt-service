@@ -33,6 +33,12 @@ dependencies {
     implementation "software.amazon.awssdk:url-connection-client:${awsSdkVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+
+    // Story 7.1: AWS Lambda Powertools structured logging. v1 stable; we use the procedural
+    // LoggingUtils API (appendKey / clearKeys) rather than the @Logging aspectj annotation —
+    // satisfies the AC without pulling aspectj weaving into the build.
+    implementation "software.amazon.lambda:powertools-logging:1.18.0"
+    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1"
     compileOnly "org.projectlombok:lombok:1.18.32"
     annotationProcessor "org.projectlombok:lombok:1.18.32"
 
@@ -54,6 +60,12 @@ shadowJar {
     archiveVersion = ''
     archiveClassifier = ''
     mergeServiceFiles()
+    // log4j2 ships META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat
+    // in multiple jars (core, powertools, etc.). The default merge clobbers one with another,
+    // breaking LambdaJsonLayout discovery and falling back to a non-functional PatternLayout
+    // that emits "Unrecognized conversion specifier" errors. This transformer concatenates
+    // the .dat files correctly so all plugins are discoverable post-shadow.
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer)
 }
 
 tasks.register('lambdaPackage', Zip) {
