@@ -345,4 +345,34 @@ class SweeperHandlerTest {
             SweeperHandler.BATCH_SIZE, Instant.now().minus(24, ChronoUnit.HOURS));
     assertThat(remaining).isNotEmpty();
   }
+
+  // ── Story 7.2: VersionConflict metric on race ────────────────────────────
+
+  @Test
+  void givenRaceOnUpdateStatus_whenSweep_thenEmitsVersionConflictMetricNotOrphanSwept() {
+    // Simulate: findOrphans returns a PENDING row, but between that lookup and updateStatus,
+    // ConfirmVersion (or another sweeper) flipped the row out of PENDING. The conditional
+    // updateStatus throws VersionConflictException; the handler must emit
+    // VersionConflict[operation=sweep] and skip the orphan-swept metric (the winner emits
+    // its own signal).
+    versionDao.put(pendingOrphan("race-model", 1, 0, null));
+    stubHead(null);
+
+    com.anthropic.artifactmgmt.dao.VersionDao spyDao = org.mockito.Mockito.spy(versionDao);
+    org.mockito.Mockito.doThrow(
+            new com.anthropic.artifactmgmt.exception.VersionConflictException("status changed"))
+        .when(spyDao)
+        .updateStatus(
+            org.mockito.ArgumentMatchers.anyString(),
+            org.mockito.ArgumentMatchers.anyInt(),
+            org.mockito.ArgumentMatchers.anyInt(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any());
+
+    SweeperHandler sweeper = new SweeperHandler(spyDao, mockS3, BUCKET, false, mockMetrics);
+    sweeper.handleRequest(null, null);
+
+    verify(mockMetrics).recordVersionConflict("sweep");
+    verify(mockMetrics, never()).recordOrphanSwept(anyString());
+  }
 }

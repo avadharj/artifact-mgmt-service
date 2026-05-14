@@ -69,7 +69,7 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
             .build();
     this.bucket = System.getenv("ARTIFACTS_BUCKET");
     this.dryRun = Boolean.parseBoolean(System.getenv().getOrDefault("DRY_RUN", "false"));
-    this.metrics = MetricsPublisher.noOp();
+    this.metrics = new PowertoolsMetricsPublisher();
   }
 
   /** Test constructor — accepts injected dependencies. */
@@ -163,6 +163,7 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
         // longer PENDING. That's the desired terminal state; nothing to do.
         LoggingUtils.appendKey("outcome", "conflict");
         logger.warn("sweep_conflict status-changed-during-update");
+        metrics.recordVersionConflict("sweep");
         return;
       }
 

@@ -49,6 +49,7 @@ class VersionHandlerTest {
   private VersionIncrementer mockIncrementer;
   private S3Client mockS3Client;
   private S3Presigner mockPresigner;
+  private MetricsPublisher mockMetrics;
   private VersionHandler handler;
 
   private static final String BUCKET = "test-bucket";
@@ -64,6 +65,7 @@ class VersionHandlerTest {
     mockIncrementer = mock(VersionIncrementer.class);
     mockS3Client = mock(S3Client.class);
     mockPresigner = mock(S3Presigner.class);
+    mockMetrics = mock(MetricsPublisher.class);
 
     // Default: no existing idempotency key
     when(mockVersionDao.findByIdempotencyKey(anyString())).thenReturn(Optional.empty());
@@ -85,7 +87,7 @@ class VersionHandlerTest {
             mockS3Client,
             mockPresigner,
             BUCKET,
-            MetricsPublisher.noOp());
+            mockMetrics);
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
@@ -168,6 +170,8 @@ class VersionHandlerTest {
     assertThat(resp.getBody()).contains("uploadUrl");
     verify(mockVersionDao).put(any());
     verify(mockModelDao).updateLatestVersion("fraud-detector", 1, 1, 1);
+    // Story 7.2: VersionsCreated emitted with framework dimension parsed from depSnapshot.
+    verify(mockMetrics).recordVersionCreated("pytorch");
   }
 
   // ── AC: happy path major bump ─────────────────────────────────────────────
@@ -228,6 +232,8 @@ class VersionHandlerTest {
     assertThat(resp.getBody()).contains("\"current_major\":\"3\"");
     assertThat(resp.getBody()).contains("\"current_minor\":\"5\"");
     verify(mockVersionDao, never()).put(any());
+    // Story 7.2: VersionConflict metric emitted with operation dimension.
+    verify(mockMetrics).recordVersionConflict("create_version");
   }
 
   // ── AC: invalid major ────────────────────────────────────────────────────
@@ -272,6 +278,49 @@ class VersionHandlerTest {
     // Model DAO never touched on replay
     verify(mockModelDao, never()).get(anyString());
     verify(mockVersionDao, never()).put(any());
+    // Story 7.2: live (non-expired) replay emits IdempotencyReplay, not the expired variant.
+    verify(mockMetrics).recordIdempotencyReplay();
+    verify(mockMetrics, never()).recordIdempotencyExpiredReplay();
+  }
+
+  @Test
+  void givenExpiredIdempotencyRecord_whenCreateVersion_thenEmitsExpiredReplayMetric()
+      throws Exception {
+    // Story 7.2: a replay whose TTL has already elapsed is a code smell — the cleanup TTL on
+    // the Version row was supposed to remove it before clients could replay. Emit a separate
+    // metric so dashboards can alert on this specifically.
+    String key = "00000000-0000-0000-0000-000000000099";
+    Version expired =
+        Version.builder()
+            .modelName("fraud-detector")
+            .major(1)
+            .minor(1)
+            .versionKey(VersionKey.encode(1, 1))
+            .s3Key("fraud-detector/v1.1/weights.bin")
+            .status(VersionStatus.PENDING)
+            .depSnapshot("{}")
+            .trainingMetadata("{}")
+            .idempotencyKey(key)
+            .ttl(Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond()) // already elapsed
+            .createdAt(Instant.now().toString())
+            .createdBy("alice")
+            .build();
+    when(mockVersionDao.findByIdempotencyKey(key)).thenReturn(Optional.of(expired));
+
+    String body =
+        "{\"idempotencyKey\":\""
+            + key
+            + "\","
+            + "\"depSnapshot\":{\"framework\":{\"name\":\"pytorch\",\"version\":\"2.0\"},"
+            + "\"pythonVersion\":\"3.11\",\"packages\":{},\"os\":\"linux\","
+            + "\"capturedAt\":\"2026-01-01T00:00:00Z\"},"
+            + "\"trainingMetadata\":{}}";
+    APIGatewayProxyResponseEvent resp =
+        handler.handleRequest(postVersions("fraud-detector", body), null);
+
+    assertThat(resp.getStatusCode()).isEqualTo(200);
+    verify(mockMetrics).recordIdempotencyExpiredReplay();
+    verify(mockMetrics, never()).recordIdempotencyReplay();
   }
 
   // ── AC: unknown model ─────────────────────────────────────────────────────
@@ -885,6 +934,8 @@ class VersionHandlerTest {
 
     assertThat(resp.getStatusCode()).isEqualTo(409);
     assertThat(resp.getBody()).contains("VERSION_CONFLICT");
+    // Story 7.2: VersionConflict metric emitted with operation=delete_version.
+    verify(mockMetrics).recordVersionConflict("delete_version");
   }
 
   @Test

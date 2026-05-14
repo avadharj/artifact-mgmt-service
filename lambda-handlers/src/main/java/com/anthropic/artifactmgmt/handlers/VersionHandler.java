@@ -96,7 +96,7 @@ public class VersionHandler
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
     this.bucket = System.getenv("ARTIFACTS_BUCKET");
-    this.metrics = MetricsPublisher.noOp();
+    this.metrics = new PowertoolsMetricsPublisher();
     this.adminRoleArn = System.getenv().getOrDefault("ADMIN_ROLE_ARN", "");
   }
 
@@ -212,6 +212,15 @@ public class VersionHandler
     Optional<Version> existing = versionDao.findByIdempotencyKey(req.getIdempotencyKey());
     if (existing.isPresent()) {
       Version v = existing.get();
+      // Story 7.2: split the metric so dashboards can alert on expired-replay specifically —
+      // it implies the cleanup TTL on the Version row didn't fire before clients replayed,
+      // which is an operational smell separate from healthy live replays.
+      Long ttl = v.getTtl();
+      if (ttl != null && ttl > 0 && ttl < Instant.now().getEpochSecond()) {
+        metrics.recordIdempotencyExpiredReplay();
+      } else {
+        metrics.recordIdempotencyReplay();
+      }
       // Re-sign with the stored checksum so the replayed URL binds to the same value as the
       // original. If the original was unbound, the replay is unbound too.
       String uploadUrl = presignPutUrl(v.getS3Key(), v.getChecksumSha256());
@@ -248,6 +257,7 @@ public class VersionHandler
     } catch (VersionConflictException e) {
       // e.getCurrentMajor()/getCurrentMinor() reflect the actual current state re-read after
       // the conditional update failed, not the stale pre-fetch.
+      metrics.recordVersionConflict("create_version");
       return errorResponse(
           409,
           "VERSION_CONFLICT",
@@ -596,6 +606,7 @@ public class VersionHandler
     } catch (VersionConflictException e) {
       // Lost a race against another writer (e.g. ConfirmVersion flipping PENDING→READY between
       // our get and our updateStatus). Surface as 409 so the client can retry.
+      metrics.recordVersionConflict("delete_version");
       return errorResponse(409, "VERSION_CONFLICT", "Version status changed during delete");
     }
 
