@@ -6639,3 +6639,963 @@ exports[`DataStack prod matches snapshot 1`] = `
   },
 }
 `;
+
+exports[`ObservabilityStack alpha matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+            {
+              "Ref": "Dashboard9E4231ED",
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "ArtifactMgmt alpha alarms",
+        "TopicName": "artifact-mgmt-alarms-alpha",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AlarmTopicavadhanianortheasternedu7192F66E": {
+      "Properties": {
+        "Endpoint": "avadhani.a@northeastern.edu",
+        "Protocol": "email",
+        "TopicArn": {
+          "Ref": "AlarmTopicD01E77F9",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "Dashboard9E4231ED": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"metric","width":12,"height":6,"x":0,"y":0,"properties":{"view":"timeSeries","title":"API latency (p50 / p95 / p99) — 1m","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-alpha","Stage","alpha",{"label":"p50","period":60,"stat":"p50"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-alpha","Stage","alpha",{"label":"p95","period":60,"stat":"p95"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-alpha","Stage","alpha",{"label":"p99","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":0,"properties":{"view":"timeSeries","title":"API error rate (4XX / 5XX) — 1m sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","4XXError","ApiName","artifact-mgmt-api-alpha","Stage","alpha",{"label":"4XX","period":60,"stat":"Sum"}],["AWS/ApiGateway","5XXError","ApiName","artifact-mgmt-api-alpha","Stage","alpha",{"label":"5XX","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":6,"properties":{"view":"timeSeries","title":"Lambda throttles + DLQ depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-model-alpha",{"label":"model throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-version-alpha",{"label":"version throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-sweeper-alpha",{"label":"sweeper throttles","period":60,"stat":"Sum"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-model-alpha-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-version-alpha-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-sweeper-alpha-dlq",{"period":60,"yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":6,"properties":{"view":"timeSeries","title":"DDB capacity + throttles","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-models-alpha",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-models-alpha",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-versions-alpha",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-versions-alpha",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-models-alpha",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-models-alpha",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-versions-alpha",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-versions-alpha",{"period":60,"stat":"Sum","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":12,"properties":{"view":"timeSeries","title":"VersionsCreated vs VersionsConfirmed — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","VersionsCreated",{"label":"created","period":3600,"stat":"Sum"}],["ArtifactMgmt","VersionsConfirmed",{"label":"confirmed","period":3600,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":12,"properties":{"view":"timeSeries","title":"UploadOrphansSwept — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","UploadOrphansSwept",{"period":3600,"stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "ArtifactMgmt-alpha",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "High5xxRate58B1D88C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API Gateway 5XX errors over 5min exceed 1% threshold. Investigate the most recent Lambda failure traces and check the DLQ.",
+        "AlarmName": "ArtifactMgmt-alpha-High5xxRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-alpha",
+          },
+          {
+            "Name": "Stage",
+            "Value": "alpha",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "5XXError",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "OrphanRateBAAAE312": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmName": "ArtifactMgmt-alpha-OrphanRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "UploadOrphansSwept",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 3600,
+        "Statistic": "Sum",
+        "Threshold": 50,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "P95LatencyDFFF1EC7": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API p95 latency exceeds 3s over 5min. Check downstream DDB / S3 latency.",
+        "AlarmName": "ArtifactMgmt-alpha-P95Latency",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 2,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-alpha",
+          },
+          {
+            "Name": "Stage",
+            "Value": "alpha",
+          },
+        ],
+        "EvaluationPeriods": 2,
+        "ExtendedStatistic": "p95",
+        "MetricName": "Latency",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Threshold": 3000,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "VersionConflictRate31EDF8AC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmName": "ArtifactMgmt-alpha-VersionConflictRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "VersionConflict",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`ObservabilityStack beta matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+            {
+              "Ref": "Dashboard9E4231ED",
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "ArtifactMgmt beta alarms",
+        "TopicName": "artifact-mgmt-alarms-beta",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AlarmTopicavadhanianortheasternedu7192F66E": {
+      "Properties": {
+        "Endpoint": "avadhani.a@northeastern.edu",
+        "Protocol": "email",
+        "TopicArn": {
+          "Ref": "AlarmTopicD01E77F9",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "Dashboard9E4231ED": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"metric","width":12,"height":6,"x":0,"y":0,"properties":{"view":"timeSeries","title":"API latency (p50 / p95 / p99) — 1m","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-beta","Stage","beta",{"label":"p50","period":60,"stat":"p50"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-beta","Stage","beta",{"label":"p95","period":60,"stat":"p95"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-beta","Stage","beta",{"label":"p99","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":0,"properties":{"view":"timeSeries","title":"API error rate (4XX / 5XX) — 1m sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","4XXError","ApiName","artifact-mgmt-api-beta","Stage","beta",{"label":"4XX","period":60,"stat":"Sum"}],["AWS/ApiGateway","5XXError","ApiName","artifact-mgmt-api-beta","Stage","beta",{"label":"5XX","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":6,"properties":{"view":"timeSeries","title":"Lambda throttles + DLQ depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-model-beta",{"label":"model throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-version-beta",{"label":"version throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-sweeper-beta",{"label":"sweeper throttles","period":60,"stat":"Sum"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-model-beta-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-version-beta-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-sweeper-beta-dlq",{"period":60,"yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":6,"properties":{"view":"timeSeries","title":"DDB capacity + throttles","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-models-beta",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-models-beta",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-versions-beta",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-versions-beta",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-models-beta",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-models-beta",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-versions-beta",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-versions-beta",{"period":60,"stat":"Sum","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":12,"properties":{"view":"timeSeries","title":"VersionsCreated vs VersionsConfirmed — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","VersionsCreated",{"label":"created","period":3600,"stat":"Sum"}],["ArtifactMgmt","VersionsConfirmed",{"label":"confirmed","period":3600,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":12,"properties":{"view":"timeSeries","title":"UploadOrphansSwept — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","UploadOrphansSwept",{"period":3600,"stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "ArtifactMgmt-beta",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "High5xxRate58B1D88C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API Gateway 5XX errors over 5min exceed 1% threshold. Investigate the most recent Lambda failure traces and check the DLQ.",
+        "AlarmName": "ArtifactMgmt-beta-High5xxRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-beta",
+          },
+          {
+            "Name": "Stage",
+            "Value": "beta",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "5XXError",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "OrphanRateBAAAE312": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmName": "ArtifactMgmt-beta-OrphanRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "UploadOrphansSwept",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 3600,
+        "Statistic": "Sum",
+        "Threshold": 50,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "P95LatencyDFFF1EC7": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API p95 latency exceeds 3s over 5min. Check downstream DDB / S3 latency.",
+        "AlarmName": "ArtifactMgmt-beta-P95Latency",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 2,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-beta",
+          },
+          {
+            "Name": "Stage",
+            "Value": "beta",
+          },
+        ],
+        "EvaluationPeriods": 2,
+        "ExtendedStatistic": "p95",
+        "MetricName": "Latency",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Threshold": 3000,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "VersionConflictRate31EDF8AC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmName": "ArtifactMgmt-beta-VersionConflictRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "VersionConflict",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`ObservabilityStack gamma matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+            {
+              "Ref": "Dashboard9E4231ED",
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "ArtifactMgmt gamma alarms",
+        "TopicName": "artifact-mgmt-alarms-gamma",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AlarmTopicavadhanianortheasternedu7192F66E": {
+      "Properties": {
+        "Endpoint": "avadhani.a@northeastern.edu",
+        "Protocol": "email",
+        "TopicArn": {
+          "Ref": "AlarmTopicD01E77F9",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "Dashboard9E4231ED": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"metric","width":12,"height":6,"x":0,"y":0,"properties":{"view":"timeSeries","title":"API latency (p50 / p95 / p99) — 1m","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-gamma","Stage","gamma",{"label":"p50","period":60,"stat":"p50"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-gamma","Stage","gamma",{"label":"p95","period":60,"stat":"p95"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-gamma","Stage","gamma",{"label":"p99","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":0,"properties":{"view":"timeSeries","title":"API error rate (4XX / 5XX) — 1m sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","4XXError","ApiName","artifact-mgmt-api-gamma","Stage","gamma",{"label":"4XX","period":60,"stat":"Sum"}],["AWS/ApiGateway","5XXError","ApiName","artifact-mgmt-api-gamma","Stage","gamma",{"label":"5XX","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":6,"properties":{"view":"timeSeries","title":"Lambda throttles + DLQ depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-model-gamma",{"label":"model throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-version-gamma",{"label":"version throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-sweeper-gamma",{"label":"sweeper throttles","period":60,"stat":"Sum"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-model-gamma-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-version-gamma-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-sweeper-gamma-dlq",{"period":60,"yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":6,"properties":{"view":"timeSeries","title":"DDB capacity + throttles","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-models-gamma",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-models-gamma",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-versions-gamma",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-versions-gamma",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-models-gamma",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-models-gamma",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-versions-gamma",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-versions-gamma",{"period":60,"stat":"Sum","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":12,"properties":{"view":"timeSeries","title":"VersionsCreated vs VersionsConfirmed — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","VersionsCreated",{"label":"created","period":3600,"stat":"Sum"}],["ArtifactMgmt","VersionsConfirmed",{"label":"confirmed","period":3600,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":12,"properties":{"view":"timeSeries","title":"UploadOrphansSwept — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","UploadOrphansSwept",{"period":3600,"stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "ArtifactMgmt-gamma",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "High5xxRate58B1D88C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API Gateway 5XX errors over 5min exceed 1% threshold. Investigate the most recent Lambda failure traces and check the DLQ.",
+        "AlarmName": "ArtifactMgmt-gamma-High5xxRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-gamma",
+          },
+          {
+            "Name": "Stage",
+            "Value": "gamma",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "5XXError",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "OrphanRateBAAAE312": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmName": "ArtifactMgmt-gamma-OrphanRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "UploadOrphansSwept",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 3600,
+        "Statistic": "Sum",
+        "Threshold": 50,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "P95LatencyDFFF1EC7": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API p95 latency exceeds 3s over 5min. Check downstream DDB / S3 latency.",
+        "AlarmName": "ArtifactMgmt-gamma-P95Latency",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 2,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-gamma",
+          },
+          {
+            "Name": "Stage",
+            "Value": "gamma",
+          },
+        ],
+        "EvaluationPeriods": 2,
+        "ExtendedStatistic": "p95",
+        "MetricName": "Latency",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Threshold": 3000,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "VersionConflictRate31EDF8AC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmName": "ArtifactMgmt-gamma-VersionConflictRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "VersionConflict",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`ObservabilityStack prod matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AlarmTopicArn": {
+      "Value": {
+        "Ref": "AlarmTopicD01E77F9",
+      },
+    },
+    "DashboardUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=",
+            {
+              "Ref": "Dashboard9E4231ED",
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AlarmTopicD01E77F9": {
+      "Properties": {
+        "DisplayName": "ArtifactMgmt prod alarms",
+        "TopicName": "artifact-mgmt-alarms-prod",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "AlarmTopicavadhanianortheasternedu7192F66E": {
+      "Properties": {
+        "Endpoint": "avadhani.a@northeastern.edu",
+        "Protocol": "email",
+        "TopicArn": {
+          "Ref": "AlarmTopicD01E77F9",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "Dashboard9E4231ED": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"metric","width":12,"height":6,"x":0,"y":0,"properties":{"view":"timeSeries","title":"API latency (p50 / p95 / p99) — 1m","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-prod","Stage","prod",{"label":"p50","period":60,"stat":"p50"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-prod","Stage","prod",{"label":"p95","period":60,"stat":"p95"}],["AWS/ApiGateway","Latency","ApiName","artifact-mgmt-api-prod","Stage","prod",{"label":"p99","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":0,"properties":{"view":"timeSeries","title":"API error rate (4XX / 5XX) — 1m sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","4XXError","ApiName","artifact-mgmt-api-prod","Stage","prod",{"label":"4XX","period":60,"stat":"Sum"}],["AWS/ApiGateway","5XXError","ApiName","artifact-mgmt-api-prod","Stage","prod",{"label":"5XX","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":6,"properties":{"view":"timeSeries","title":"Lambda throttles + DLQ depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-model-prod",{"label":"model throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-version-prod",{"label":"version throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","artifact-mgmt-sweeper-prod",{"label":"sweeper throttles","period":60,"stat":"Sum"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-model-prod-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-version-prod-dlq",{"period":60,"yAxis":"right"}],["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","artifact-mgmt-sweeper-prod-dlq",{"period":60,"yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":6,"properties":{"view":"timeSeries","title":"DDB capacity + throttles","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-models-prod",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-models-prod",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","artifact-mgmt-versions-prod",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ConsumedWriteCapacityUnits","TableName","artifact-mgmt-versions-prod",{"period":60,"stat":"Sum"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-models-prod",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-models-prod",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","ReadThrottleEvents","TableName","artifact-mgmt-versions-prod",{"period":60,"stat":"Sum","yAxis":"right"}],["AWS/DynamoDB","WriteThrottleEvents","TableName","artifact-mgmt-versions-prod",{"period":60,"stat":"Sum","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":0,"y":12,"properties":{"view":"timeSeries","title":"VersionsCreated vs VersionsConfirmed — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","VersionsCreated",{"label":"created","period":3600,"stat":"Sum"}],["ArtifactMgmt","VersionsConfirmed",{"label":"confirmed","period":3600,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":12,"properties":{"view":"timeSeries","title":"UploadOrphansSwept — 1h sum","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["ArtifactMgmt","UploadOrphansSwept",{"period":3600,"stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "ArtifactMgmt-prod",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "High5xxRate58B1D88C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API Gateway 5XX errors over 5min exceed 1% threshold. Investigate the most recent Lambda failure traces and check the DLQ.",
+        "AlarmName": "ArtifactMgmt-prod-High5xxRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-prod",
+          },
+          {
+            "Name": "Stage",
+            "Value": "prod",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "5XXError",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "OrphanRateBAAAE312": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmName": "ArtifactMgmt-prod-OrphanRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "UploadOrphansSwept",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 3600,
+        "Statistic": "Sum",
+        "Threshold": 50,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "P95LatencyDFFF1EC7": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "API p95 latency exceeds 3s over 5min. Check downstream DDB / S3 latency.",
+        "AlarmName": "ArtifactMgmt-prod-P95Latency",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 2,
+        "Dimensions": [
+          {
+            "Name": "ApiName",
+            "Value": "artifact-mgmt-api-prod",
+          },
+          {
+            "Name": "Stage",
+            "Value": "prod",
+          },
+        ],
+        "EvaluationPeriods": 2,
+        "ExtendedStatistic": "p95",
+        "MetricName": "Latency",
+        "Namespace": "AWS/ApiGateway",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Threshold": 3000,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "VersionConflictRate31EDF8AC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmName": "ArtifactMgmt-prod-VersionConflictRate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "DatapointsToAlarm": 1,
+        "EvaluationPeriods": 1,
+        "MetricName": "VersionConflict",
+        "Namespace": "ArtifactMgmt",
+        "OKActions": [
+          {
+            "Ref": "AlarmTopicD01E77F9",
+          },
+        ],
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

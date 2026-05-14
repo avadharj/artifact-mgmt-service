@@ -5,6 +5,7 @@ import { Template } from 'aws-cdk-lib/assertions';
 import { ApiStack } from '../lib/api-stack';
 import { ComputeStack } from '../lib/compute-stack';
 import { DataStack } from '../lib/data-stack';
+import { ObservabilityStack } from '../lib/observability-stack';
 import { STAGES } from '../lib/stage-config';
 
 // Stable stub asset factory: hash never varies across build environments.
@@ -59,6 +60,18 @@ for (const stageName of stageNames) {
       config,
       env,
       openApiSpecOverride: STUB_OPENAPI,
+    });
+
+    it('matches snapshot', () => {
+      expect(Template.fromStack(stack).toJSON()).toMatchSnapshot();
+    });
+  });
+
+  describe(`ObservabilityStack ${stageName}`, () => {
+    const app = new cdk.App();
+    const stack = new ObservabilityStack(app, `TestObservabilityStack-${stageName}`, {
+      config,
+      env,
     });
 
     it('matches snapshot', () => {

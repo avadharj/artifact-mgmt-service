@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import { ApiStack } from '../lib/api-stack';
 import { ComputeStack } from '../lib/compute-stack';
 import { DataStack } from '../lib/data-stack';
+import { ObservabilityStack } from '../lib/observability-stack';
 import { STAGES } from '../lib/stage-config';
 
 const app = new cdk.App();
@@ -39,8 +40,13 @@ const apiStack = new ApiStack(app, `ArtifactMgmt-Api-${stageName}`, {
   versionHandlerArn: computeStack.versionHandlerArn,
   adminHandlerArn: computeStack.adminHandlerArn,
 });
+const observabilityStack = new ObservabilityStack(
+  app,
+  `ArtifactMgmt-Observability-${stageName}`,
+  { config, env },
+);
 
-[dataStack, computeStack, apiStack].forEach((stack) => {
+[dataStack, computeStack, apiStack, observabilityStack].forEach((stack) => {
   cdk.Tags.of(stack).add('Stage', stageName);
   cdk.Tags.of(stack).add('Service', 'ArtifactMgmt');
   cdk.Tags.of(stack).add('Owner', 'arjun');
