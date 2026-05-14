@@ -28,6 +28,13 @@ export interface ObservabilityStackProps extends cdk.StackProps {
  * The four alarms (High5xxRate, P95Latency, OrphanRate, VersionConflictRate) match the spec
  * AC; each has an OnOk action so a recovered metric clears the page.
  */
+// Runbook URLs (Story 7.5). Linked into the alarm descriptions so the on-call sees the
+// runbook in the SNS notification body before they have to dig through repo history.
+const RUNBOOK_BASE =
+  'https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks';
+const ORPHAN_RUNBOOK = `${RUNBOOK_BASE}/orphan-cleanup.md`;
+const CONFLICT_RUNBOOK = `${RUNBOOK_BASE}/major-bump-race.md`;
+
 export class ObservabilityStack extends cdk.Stack {
   readonly alarmTopic: sns.Topic;
   readonly dashboard: cw.Dashboard;
@@ -242,7 +249,8 @@ export class ObservabilityStack extends cdk.Stack {
       alarmName: `ArtifactMgmt-${stage}-OrphanRate`,
       alarmDescription:
         'Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) ' +
-        'or sustained noise (broken upload path). Check sweep_action logs.',
+        'or sustained noise (broken upload path). Check sweep_action logs.\n\nRunbook: '
+        + ORPHAN_RUNBOOK,
       metric: customMetric('UploadOrphansSwept', {
         statistic: 'Sum',
         period: cdk.Duration.hours(1),
@@ -258,7 +266,8 @@ export class ObservabilityStack extends cdk.Stack {
       alarmName: `ArtifactMgmt-${stage}-VersionConflictRate`,
       alarmDescription:
         'More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the ' +
-        'same model. Could be a client retry bug or a real contention spike.',
+        'same model. Could be a client retry bug or a real contention spike.\n\nRunbook: '
+        + CONFLICT_RUNBOOK,
       metric: customMetric('VersionConflict', {
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),

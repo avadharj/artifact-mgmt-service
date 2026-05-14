@@ -6768,7 +6768,9 @@ exports[`ObservabilityStack alpha matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/orphan-cleanup.md",
         "AlarmName": "ArtifactMgmt-alpha-OrphanRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -6830,7 +6832,9 @@ exports[`ObservabilityStack alpha matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/major-bump-race.md",
         "AlarmName": "ArtifactMgmt-alpha-VersionConflictRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7008,7 +7012,9 @@ exports[`ObservabilityStack beta matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/orphan-cleanup.md",
         "AlarmName": "ArtifactMgmt-beta-OrphanRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7070,7 +7076,9 @@ exports[`ObservabilityStack beta matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/major-bump-race.md",
         "AlarmName": "ArtifactMgmt-beta-VersionConflictRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7248,7 +7256,9 @@ exports[`ObservabilityStack gamma matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/orphan-cleanup.md",
         "AlarmName": "ArtifactMgmt-gamma-OrphanRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7310,7 +7320,9 @@ exports[`ObservabilityStack gamma matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/major-bump-race.md",
         "AlarmName": "ArtifactMgmt-gamma-VersionConflictRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7488,7 +7500,9 @@ exports[`ObservabilityStack prod matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.",
+        "AlarmDescription": "Sweeper flipped >50 orphans in the last hour. A genuine spike (client SDK regression) or sustained noise (broken upload path). Check sweep_action logs.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/orphan-cleanup.md",
         "AlarmName": "ArtifactMgmt-prod-OrphanRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
@@ -7550,7 +7564,9 @@ exports[`ObservabilityStack prod matches snapshot 1`] = `
             "Ref": "AlarmTopicD01E77F9",
           },
         ],
-        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.",
+        "AlarmDescription": "More than 10 VersionConflict events in 5 minutes — multiple writers are racing on the same model. Could be a client retry bug or a real contention spike.
+
+Runbook: https://github.com/avadharj/artifact-mgmt-service/blob/main/docs/runbooks/major-bump-race.md",
         "AlarmName": "ArtifactMgmt-prod-VersionConflictRate",
         "ComparisonOperator": "GreaterThanThreshold",
         "DatapointsToAlarm": 1,
