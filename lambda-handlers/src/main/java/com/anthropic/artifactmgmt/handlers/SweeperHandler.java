@@ -3,6 +3,7 @@ package com.anthropic.artifactmgmt.handlers;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.xray.interceptors.TracingInterceptor;
 import com.anthropic.artifactmgmt.dao.VersionDao;
 import com.anthropic.artifactmgmt.exception.VersionConflictException;
 import com.anthropic.artifactmgmt.model.Version;
@@ -13,6 +14,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -54,11 +56,17 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
   /** Production constructor — reads config from environment. */
   public SweeperHandler() {
     String region = System.getenv().getOrDefault("AWS_REGION", "us-east-1");
+    // Story 7.3: one X-Ray subsegment per DDB / S3 API call. Shared across both clients.
+    ClientOverrideConfiguration xrayConfig =
+        ClientOverrideConfiguration.builder()
+            .addExecutionInterceptor(new TracingInterceptor())
+            .build();
     DynamoDbClient dynamo =
         DynamoDbClient.builder()
             .region(Region.of(region))
             .credentialsProvider(DefaultCredentialsProvider.create())
             .httpClient(UrlConnectionHttpClient.create())
+            .overrideConfiguration(xrayConfig)
             .build();
     this.versionDao = new VersionDao(dynamo, System.getenv("VERSIONS_TABLE"));
     this.s3Client =
@@ -66,6 +74,7 @@ public class SweeperHandler implements RequestHandler<ScheduledEvent, Void> {
             .region(Region.of(region))
             .credentialsProvider(DefaultCredentialsProvider.create())
             .httpClient(UrlConnectionHttpClient.create())
+            .overrideConfiguration(xrayConfig)
             .build();
     this.bucket = System.getenv("ARTIFACTS_BUCKET");
     this.dryRun = Boolean.parseBoolean(System.getenv().getOrDefault("DRY_RUN", "false"));

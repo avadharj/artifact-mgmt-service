@@ -40,6 +40,11 @@ dependencies {
     implementation "software.amazon.lambda:powertools-logging:1.18.0"
     implementation "software.amazon.lambda:powertools-metrics:1.18.0"
     implementation "org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1"
+
+    // Story 7.3: X-Ray tracing. The AWS-SDK-v2 integration jar provides TracingInterceptor,
+    // which we attach to each DynamoDbClient/S3Client builder so every AWS API call shows up
+    // as its own subsegment. Pulls in aws-xray-recorder-sdk-core transitively.
+    implementation "com.amazonaws:aws-xray-recorder-sdk-aws-sdk-v2:2.18.2"
     compileOnly "org.projectlombok:lombok:1.18.32"
     annotationProcessor "org.projectlombok:lombok:1.18.32"
 

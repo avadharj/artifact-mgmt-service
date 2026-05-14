@@ -4,6 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Subsegment;
+import com.amazonaws.xray.interceptors.TracingInterceptor;
 import com.anthropic.artifactmgmt.dao.ModelDao;
 import com.anthropic.artifactmgmt.dao.VersionDao;
 import com.anthropic.artifactmgmt.dao.VersionKey;
@@ -32,6 +35,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -73,11 +77,19 @@ public class VersionHandler
   /** Production constructor — reads config from environment. */
   public VersionHandler() {
     String region = System.getenv().getOrDefault("AWS_REGION", "us-east-1");
+    // Story 7.3: TracingInterceptor emits one X-Ray subsegment per DDB / S3 API call. The
+    // S3Presigner is NOT instrumented because presigning is a local cryptographic operation
+    // (no network I/O), so it doesn't show up on the service map anyway.
+    ClientOverrideConfiguration xrayConfig =
+        ClientOverrideConfiguration.builder()
+            .addExecutionInterceptor(new TracingInterceptor())
+            .build();
     DynamoDbClient dynamo =
         DynamoDbClient.builder()
             .region(Region.of(region))
             .credentialsProvider(DefaultCredentialsProvider.create())
             .httpClient(UrlConnectionHttpClient.create())
+            .overrideConfiguration(xrayConfig)
             .build();
     DynamoDbEnhancedClient enhanced =
         DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build();
@@ -89,6 +101,7 @@ public class VersionHandler
             .region(Region.of(region))
             .credentialsProvider(DefaultCredentialsProvider.create())
             .httpClient(UrlConnectionHttpClient.create())
+            .overrideConfiguration(xrayConfig)
             .build();
     this.s3Presigner =
         S3Presigner.builder()
@@ -242,13 +255,26 @@ public class VersionHandler
       return errorResponse(404, "MODEL_NOT_FOUND", e.getMessage());
     }
 
+    // Story 7.3: custom subsegment around the increment computation. Annotations are indexed
+    // by X-Ray and queryable via the trace explorer — model_name lets us pivot to a single
+    // model's traces, bump_type splits MAJOR vs MINOR latency.
     IncrementResult incr;
+    Subsegment incrementerSeg = AWSXRay.beginSubsegment("VersionIncrementer.next");
     try {
+      if (incrementerSeg != null) {
+        incrementerSeg.putAnnotation("model_name", modelName);
+      }
       incr =
           incrementer.next(
               model.getLatestMajor(), model.getLatestMinor(), Optional.ofNullable(req.getMajor()));
+      if (incrementerSeg != null) {
+        incrementerSeg.putAnnotation("bump_type", incr.type().name());
+      }
     } catch (InvalidMajorVersionException e) {
+      if (incrementerSeg != null) incrementerSeg.addException(e);
       return errorResponse(400, "INVALID_MAJOR_VERSION", e.getMessage());
+    } finally {
+      AWSXRay.endSubsegment();
     }
 
     try {

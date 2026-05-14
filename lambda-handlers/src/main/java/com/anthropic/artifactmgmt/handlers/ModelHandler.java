@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.amazonaws.xray.interceptors.TracingInterceptor;
 import com.anthropic.artifactmgmt.dao.ModelDao;
 import com.anthropic.artifactmgmt.exception.AccessDeniedException;
 import com.anthropic.artifactmgmt.exception.ModelAlreadyExistsException;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -56,6 +58,11 @@ public class ModelHandler
             .region(Region.of(System.getenv().getOrDefault("AWS_REGION", "us-east-1")))
             .credentialsProvider(DefaultCredentialsProvider.create())
             .httpClient(UrlConnectionHttpClient.create())
+            // Story 7.3: emit one X-Ray subsegment per DDB API call.
+            .overrideConfiguration(
+                ClientOverrideConfiguration.builder()
+                    .addExecutionInterceptor(new TracingInterceptor())
+                    .build())
             .build();
     this.modelDao =
         new ModelDao(DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build(), tableName);
