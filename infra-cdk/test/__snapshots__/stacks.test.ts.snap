@@ -119,7 +119,7 @@ exports[`ApiStack alpha matches snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "ApiDeploymentB17BE62Db9ecc65aabb839de15974052effd1c77": {
+    "ApiDeploymentB17BE62D14f86fcd29a76e77a0e6de6f7dcfcf9d": {
       "Metadata": {
         "aws:cdk:do-not-refactor": true,
       },
@@ -146,7 +146,7 @@ exports[`ApiStack alpha matches snapshot 1`] = `
           "Format": "{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","user":"$context.identity.user","caller":"$context.identity.caller","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}",
         },
         "DeploymentId": {
-          "Ref": "ApiDeploymentB17BE62Db9ecc65aabb839de15974052effd1c77",
+          "Ref": "ApiDeploymentB17BE62D14f86fcd29a76e77a0e6de6f7dcfcf9d",
         },
         "MethodSettings": [
           {
@@ -186,9 +186,9 @@ exports[`ApiStack alpha matches snapshot 1`] = `
           },
           "openapi": "3.0.2",
           "paths": {
-            "/stub": {
+            "/models": {
               "get": {
-                "operationId": "StubOp",
+                "operationId": "ListModels",
                 "responses": {
                   "200": {
                     "description": "ok",
@@ -203,7 +203,28 @@ exports[`ApiStack alpha matches snapshot 1`] = `
                   "httpMethod": "POST",
                   "passthroughBehavior": "when_no_match",
                   "type": "aws_proxy",
-                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-admin/invocations",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-model/invocations",
+                },
+              },
+            },
+            "/models/{modelName}/versions": {
+              "get": {
+                "operationId": "ListVersions",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "type": "aws_proxy",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-version/invocations",
                 },
               },
             },
@@ -405,7 +426,7 @@ exports[`ApiStack beta matches snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "ApiDeploymentB17BE62D93776e5f14fa9db52d63f6f51b170d1b": {
+    "ApiDeploymentB17BE62D819b59cb5cb0084487587201227b4acc": {
       "Metadata": {
         "aws:cdk:do-not-refactor": true,
       },
@@ -432,7 +453,7 @@ exports[`ApiStack beta matches snapshot 1`] = `
           "Format": "{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","user":"$context.identity.user","caller":"$context.identity.caller","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}",
         },
         "DeploymentId": {
-          "Ref": "ApiDeploymentB17BE62D93776e5f14fa9db52d63f6f51b170d1b",
+          "Ref": "ApiDeploymentB17BE62D819b59cb5cb0084487587201227b4acc",
         },
         "MethodSettings": [
           {
@@ -472,9 +493,9 @@ exports[`ApiStack beta matches snapshot 1`] = `
           },
           "openapi": "3.0.2",
           "paths": {
-            "/stub": {
+            "/models": {
               "get": {
-                "operationId": "StubOp",
+                "operationId": "ListModels",
                 "responses": {
                   "200": {
                     "description": "ok",
@@ -489,7 +510,28 @@ exports[`ApiStack beta matches snapshot 1`] = `
                   "httpMethod": "POST",
                   "passthroughBehavior": "when_no_match",
                   "type": "aws_proxy",
-                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-admin/invocations",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-model/invocations",
+                },
+              },
+            },
+            "/models/{modelName}/versions": {
+              "get": {
+                "operationId": "ListVersions",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "type": "aws_proxy",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-version/invocations",
                 },
               },
             },
@@ -691,7 +733,7 @@ exports[`ApiStack gamma matches snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "ApiDeploymentB17BE62D3110ddcb891734b686272d2391404f57": {
+    "ApiDeploymentB17BE62Df4c5c325a358fb355f900470160d599d": {
       "Metadata": {
         "aws:cdk:do-not-refactor": true,
       },
@@ -718,7 +760,7 @@ exports[`ApiStack gamma matches snapshot 1`] = `
           "Format": "{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","user":"$context.identity.user","caller":"$context.identity.caller","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}",
         },
         "DeploymentId": {
-          "Ref": "ApiDeploymentB17BE62D3110ddcb891734b686272d2391404f57",
+          "Ref": "ApiDeploymentB17BE62Df4c5c325a358fb355f900470160d599d",
         },
         "MethodSettings": [
           {
@@ -758,9 +800,9 @@ exports[`ApiStack gamma matches snapshot 1`] = `
           },
           "openapi": "3.0.2",
           "paths": {
-            "/stub": {
+            "/models": {
               "get": {
-                "operationId": "StubOp",
+                "operationId": "ListModels",
                 "responses": {
                   "200": {
                     "description": "ok",
@@ -775,7 +817,28 @@ exports[`ApiStack gamma matches snapshot 1`] = `
                   "httpMethod": "POST",
                   "passthroughBehavior": "when_no_match",
                   "type": "aws_proxy",
-                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-admin/invocations",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-model/invocations",
+                },
+              },
+            },
+            "/models/{modelName}/versions": {
+              "get": {
+                "operationId": "ListVersions",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "type": "aws_proxy",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-version/invocations",
                 },
               },
             },
@@ -977,7 +1040,7 @@ exports[`ApiStack prod matches snapshot 1`] = `
       "Type": "AWS::IAM::Role",
       "UpdateReplacePolicy": "Retain",
     },
-    "ApiDeploymentB17BE62D088d32cd37d8f31f79289970bcf40db6": {
+    "ApiDeploymentB17BE62D8bb8b8595543f26738e835a2e55fdd84": {
       "Metadata": {
         "aws:cdk:do-not-refactor": true,
       },
@@ -1004,7 +1067,7 @@ exports[`ApiStack prod matches snapshot 1`] = `
           "Format": "{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","user":"$context.identity.user","caller":"$context.identity.caller","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}",
         },
         "DeploymentId": {
-          "Ref": "ApiDeploymentB17BE62D088d32cd37d8f31f79289970bcf40db6",
+          "Ref": "ApiDeploymentB17BE62D8bb8b8595543f26738e835a2e55fdd84",
         },
         "MethodSettings": [
           {
@@ -1044,9 +1107,9 @@ exports[`ApiStack prod matches snapshot 1`] = `
           },
           "openapi": "3.0.2",
           "paths": {
-            "/stub": {
+            "/models": {
               "get": {
-                "operationId": "StubOp",
+                "operationId": "ListModels",
                 "responses": {
                   "200": {
                     "description": "ok",
@@ -1061,7 +1124,28 @@ exports[`ApiStack prod matches snapshot 1`] = `
                   "httpMethod": "POST",
                   "passthroughBehavior": "when_no_match",
                   "type": "aws_proxy",
-                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-admin/invocations",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-model/invocations",
+                },
+              },
+            },
+            "/models/{modelName}/versions": {
+              "get": {
+                "operationId": "ListVersions",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "type": "aws_proxy",
+                  "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:placeholder-version/invocations",
                 },
               },
             },
@@ -1154,129 +1238,6 @@ exports[`ComputeStack alpha matches snapshot 1`] = `
     },
   },
   "Resources": {
-    "AdminHandler935B2997": {
-      "DependsOn": [
-        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "AdminHandlerServiceRole211AB64E",
-      ],
-      "Properties": {
-        "Architectures": [
-          "arm64",
-        ],
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
-        },
-        "DeadLetterConfig": {
-          "TargetArn": {
-            "Fn::GetAtt": [
-              "AdminHandlerDlq6894FD92",
-              "Arn",
-            ],
-          },
-        },
-        "Environment": {
-          "Variables": {
-            "ARTIFACTS_BUCKET": "",
-            "LOG_LEVEL": "DEBUG",
-            "MODELS_TABLE": "",
-            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
-            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
-            "VERSIONS_TABLE": "",
-          },
-        },
-        "FunctionName": "artifact-mgmt-admin-alpha",
-        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
-        "MemorySize": 256,
-        "Role": {
-          "Fn::GetAtt": [
-            "AdminHandlerServiceRole211AB64E",
-            "Arn",
-          ],
-        },
-        "Runtime": "java21",
-        "Timeout": 30,
-        "TracingConfig": {
-          "Mode": "Active",
-        },
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "AdminHandlerDlq6894FD92": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "MessageRetentionPeriod": 1209600,
-        "QueueName": "artifact-mgmt-adminhandler-dlq-alpha",
-        "SqsManagedSseEnabled": true,
-      },
-      "Type": "AWS::SQS::Queue",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "AdminHandlerServiceRole211AB64E": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sqs:SendMessage",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
-                  "AdminHandlerDlq6894FD92",
-                  "Arn",
-                ],
-              },
-            },
-            {
-              "Action": [
-                "xray:PutTraceSegments",
-                "xray:PutTelemetryRecords",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "Roles": [
-          {
-            "Ref": "AdminHandlerServiceRole211AB64E",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "ModelHandler00BEEB36": {
       "DependsOn": [
         "ModelHandlerServiceRoleDefaultPolicy57B06264",
@@ -1804,129 +1765,6 @@ exports[`ComputeStack beta matches snapshot 1`] = `
     },
   },
   "Resources": {
-    "AdminHandler935B2997": {
-      "DependsOn": [
-        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "AdminHandlerServiceRole211AB64E",
-      ],
-      "Properties": {
-        "Architectures": [
-          "arm64",
-        ],
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-234567890123-us-east-1",
-          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
-        },
-        "DeadLetterConfig": {
-          "TargetArn": {
-            "Fn::GetAtt": [
-              "AdminHandlerDlq6894FD92",
-              "Arn",
-            ],
-          },
-        },
-        "Environment": {
-          "Variables": {
-            "ARTIFACTS_BUCKET": "",
-            "LOG_LEVEL": "DEBUG",
-            "MODELS_TABLE": "",
-            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
-            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
-            "VERSIONS_TABLE": "",
-          },
-        },
-        "FunctionName": "artifact-mgmt-admin-beta",
-        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
-        "MemorySize": 512,
-        "Role": {
-          "Fn::GetAtt": [
-            "AdminHandlerServiceRole211AB64E",
-            "Arn",
-          ],
-        },
-        "Runtime": "java21",
-        "Timeout": 30,
-        "TracingConfig": {
-          "Mode": "Active",
-        },
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "AdminHandlerDlq6894FD92": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "MessageRetentionPeriod": 1209600,
-        "QueueName": "artifact-mgmt-adminhandler-dlq-beta",
-        "SqsManagedSseEnabled": true,
-      },
-      "Type": "AWS::SQS::Queue",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "AdminHandlerServiceRole211AB64E": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sqs:SendMessage",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
-                  "AdminHandlerDlq6894FD92",
-                  "Arn",
-                ],
-              },
-            },
-            {
-              "Action": [
-                "xray:PutTraceSegments",
-                "xray:PutTelemetryRecords",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "Roles": [
-          {
-            "Ref": "AdminHandlerServiceRole211AB64E",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "ModelHandler00BEEB36": {
       "DependsOn": [
         "ModelHandlerServiceRoleDefaultPolicy57B06264",
@@ -2455,132 +2293,6 @@ exports[`ComputeStack gamma matches snapshot 1`] = `
     },
   },
   "Resources": {
-    "AdminHandler935B2997": {
-      "DependsOn": [
-        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "AdminHandlerServiceRole211AB64E",
-      ],
-      "Properties": {
-        "Architectures": [
-          "arm64",
-        ],
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-345678901234-us-east-1",
-          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
-        },
-        "DeadLetterConfig": {
-          "TargetArn": {
-            "Fn::GetAtt": [
-              "AdminHandlerDlq6894FD92",
-              "Arn",
-            ],
-          },
-        },
-        "Environment": {
-          "Variables": {
-            "ARTIFACTS_BUCKET": "",
-            "LOG_LEVEL": "DEBUG",
-            "MODELS_TABLE": "",
-            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
-            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
-            "VERSIONS_TABLE": "",
-          },
-        },
-        "FunctionName": "artifact-mgmt-admin-gamma",
-        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
-        "MemorySize": 1024,
-        "Role": {
-          "Fn::GetAtt": [
-            "AdminHandlerServiceRole211AB64E",
-            "Arn",
-          ],
-        },
-        "Runtime": "java21",
-        "SnapStart": {
-          "ApplyOn": "PublishedVersions",
-        },
-        "Timeout": 30,
-        "TracingConfig": {
-          "Mode": "Active",
-        },
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "AdminHandlerDlq6894FD92": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "MessageRetentionPeriod": 1209600,
-        "QueueName": "artifact-mgmt-adminhandler-dlq-gamma",
-        "SqsManagedSseEnabled": true,
-      },
-      "Type": "AWS::SQS::Queue",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "AdminHandlerServiceRole211AB64E": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sqs:SendMessage",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
-                  "AdminHandlerDlq6894FD92",
-                  "Arn",
-                ],
-              },
-            },
-            {
-              "Action": [
-                "xray:PutTraceSegments",
-                "xray:PutTelemetryRecords",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "Roles": [
-          {
-            "Ref": "AdminHandlerServiceRole211AB64E",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "ModelHandler00BEEB36": {
       "DependsOn": [
         "ModelHandlerServiceRoleDefaultPolicy57B06264",
@@ -3118,161 +2830,6 @@ exports[`ComputeStack prod matches snapshot 1`] = `
     },
   },
   "Resources": {
-    "AdminHandler935B2997": {
-      "DependsOn": [
-        "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "AdminHandlerServiceRole211AB64E",
-      ],
-      "Properties": {
-        "Architectures": [
-          "arm64",
-        ],
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-456789012345-us-east-1",
-          "S3Key": "f9a900503515a6345eac59b55cb054458b3e2cfacb15bbc4eedd6cee4f27153e.zip",
-        },
-        "DeadLetterConfig": {
-          "TargetArn": {
-            "Fn::GetAtt": [
-              "AdminHandlerDlq6894FD92",
-              "Arn",
-            ],
-          },
-        },
-        "Environment": {
-          "Variables": {
-            "ARTIFACTS_BUCKET": "",
-            "LOG_LEVEL": "INFO",
-            "MODELS_TABLE": "",
-            "POWERTOOLS_METRICS_NAMESPACE": "ArtifactMgmt",
-            "POWERTOOLS_SERVICE_NAME": "artifact-mgmt",
-            "VERSIONS_TABLE": "",
-          },
-        },
-        "FunctionName": "artifact-mgmt-admin-prod",
-        "Handler": "com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest",
-        "MemorySize": 1024,
-        "Role": {
-          "Fn::GetAtt": [
-            "AdminHandlerServiceRole211AB64E",
-            "Arn",
-          ],
-        },
-        "Runtime": "java21",
-        "SnapStart": {
-          "ApplyOn": "PublishedVersions",
-        },
-        "Timeout": 30,
-        "TracingConfig": {
-          "Mode": "Active",
-        },
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "AdminHandlerCurrentVersion0098E6C306d6d45ac79dcb0533d6057dd674b87b": {
-      "Metadata": {
-        "aws:cdk:do-not-refactor": true,
-      },
-      "Properties": {
-        "FunctionName": {
-          "Ref": "AdminHandler935B2997",
-        },
-      },
-      "Type": "AWS::Lambda::Version",
-    },
-    "AdminHandlerDlq6894FD92": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "MessageRetentionPeriod": 1209600,
-        "QueueName": "artifact-mgmt-adminhandler-dlq-prod",
-        "SqsManagedSseEnabled": true,
-      },
-      "Type": "AWS::SQS::Queue",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "AdminHandlerLiveAlias5978048D": {
-      "Properties": {
-        "FunctionName": {
-          "Ref": "AdminHandler935B2997",
-        },
-        "FunctionVersion": {
-          "Fn::GetAtt": [
-            "AdminHandlerCurrentVersion0098E6C306d6d45ac79dcb0533d6057dd674b87b",
-            "Version",
-          ],
-        },
-        "Name": "live",
-        "ProvisionedConcurrencyConfig": {
-          "ProvisionedConcurrentExecutions": 5,
-        },
-      },
-      "Type": "AWS::Lambda::Alias",
-    },
-    "AdminHandlerServiceRole211AB64E": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "AdminHandlerServiceRoleDefaultPolicy0CFC93F2": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sqs:SendMessage",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
-                  "AdminHandlerDlq6894FD92",
-                  "Arn",
-                ],
-              },
-            },
-            {
-              "Action": [
-                "xray:PutTraceSegments",
-                "xray:PutTelemetryRecords",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2",
-        "Roles": [
-          {
-            "Ref": "AdminHandlerServiceRole211AB64E",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "ModelHandler00BEEB36": {
       "DependsOn": [
         "ModelHandlerServiceRoleDefaultPolicy57B06264",

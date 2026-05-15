@@ -13,13 +13,20 @@ import { STAGES } from '../lib/stage-config';
 const stubCode = () => lambda.Code.fromAsset(path.join(__dirname, 'fixtures/stub-handler.zip'));
 
 // Minimal OpenAPI stub: keeps ApiStack snapshots independent of the Smithy build output.
+// Uses real operationIds so routing logic in ApiStack is exercised (one model op, one version op).
 const STUB_OPENAPI = {
   openapi: '3.0.2',
   info: { title: 'stub', version: '1.0' },
   paths: {
-    '/stub': {
+    '/models': {
       get: {
-        operationId: 'StubOp',
+        operationId: 'ListModels',
+        responses: { '200': { description: 'ok' } },
+      },
+    },
+    '/models/{modelName}/versions': {
+      get: {
+        operationId: 'ListVersions',
         responses: { '200': { description: 'ok' } },
       },
     },

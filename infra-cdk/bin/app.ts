@@ -38,7 +38,6 @@ const apiStack = new ApiStack(app, `ArtifactMgmt-Api-${stageName}`, {
   env,
   modelHandlerArn: computeStack.modelHandlerArn,
   versionHandlerArn: computeStack.versionHandlerArn,
-  adminHandlerArn: computeStack.adminHandlerArn,
 });
 const observabilityStack = new ObservabilityStack(
   app,

@@ -152,7 +152,7 @@ def test_major_bump_returns_newest_first(api, model):
 
     listing = api.get(f"/models/{model}/versions")
     assert listing.status_code == 200, listing.text
-    versions = [item["version"] for item in listing.json()["items"]]
+    versions = [item["version"] for item in listing.json()["versions"]]
     assert versions[:2] == ["2.0", "1.0"]
 
 
@@ -166,7 +166,7 @@ def test_skip_major_allowed(api, model):
     assert r2.json()["version"] == "5.0"
 
     listing = api.get(f"/models/{model}/versions")
-    versions = [item["version"] for item in listing.json()["items"]]
+    versions = [item["version"] for item in listing.json()["versions"]]
     assert versions[:2] == ["5.0", "1.0"]
 
 
@@ -267,5 +267,5 @@ def test_idempotency_replay_returns_same_version(api, model):
 
     # Verify only one row exists by listing versions for the model
     listing = api.get(f"/models/{model}/versions")
-    versions = [item["version"] for item in listing.json()["items"]]
+    versions = [item["version"] for item in listing.json()["versions"]]
     assert versions.count(v1) == 1, f"duplicate row found: {versions}"

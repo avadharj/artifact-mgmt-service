@@ -46,7 +46,6 @@ export class ObservabilityStack extends cdk.Stack {
     const apiName = `artifact-mgmt-api-${stage}`;
     const modelHandlerName = `artifact-mgmt-model-${stage}`;
     const versionHandlerName = `artifact-mgmt-version-${stage}`;
-    const adminHandlerName = `artifact-mgmt-admin-${stage}`;
     const sweeperHandlerName = `artifact-mgmt-sweeper-${stage}`;
     const modelsTableName = `artifact-mgmt-models-${stage}`;
     const versionsTableName = `artifact-mgmt-versions-${stage}`;

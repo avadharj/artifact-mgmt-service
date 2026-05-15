@@ -38,7 +38,6 @@ class ServiceStage extends cdk.Stage {
       config: cfg,
       modelHandlerArn: computeStack.modelHandlerArn,
       versionHandlerArn: computeStack.versionHandlerArn,
-      adminHandlerArn: computeStack.adminHandlerArn,
     });
   }
 }

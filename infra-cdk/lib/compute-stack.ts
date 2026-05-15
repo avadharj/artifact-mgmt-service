@@ -25,7 +25,6 @@ export interface ComputeStackProps extends cdk.StackProps {
 export class ComputeStack extends cdk.Stack {
   readonly modelHandlerArn: string;
   readonly versionHandlerArn: string;
-  readonly adminHandlerArn: string;
   readonly sweeperHandlerArn: string;
 
   constructor(scope: Construct, id: string, props: ComputeStackProps) {
@@ -125,28 +124,6 @@ export class ComputeStack extends cdk.Stack {
     artifactsBucket?.grantRead(versionHandler);
     maybeProvision(versionHandler, 'VersionHandler');
 
-    // ── AdminHandler — soft delete + orphan sweep; both tables + S3 DELETE ────
-
-    const adminDlq = makeDlq('AdminHandler');
-    const adminHandler = new lambda.Function(this, 'AdminHandler', {
-      functionName: `artifact-mgmt-admin-${cfg.stage}`,
-      runtime: lambda.Runtime.JAVA_21,
-      architecture: lambda.Architecture.ARM_64,
-      handler: 'com.anthropic.artifactmgmt.handlers.AdminHandler::handleRequest',
-      code: codeAsset,
-      memorySize: cfg.lambdaMemoryMB ?? 512,
-      timeout: cdk.Duration.seconds(30),
-      tracing: cfg.enableXRay ? lambda.Tracing.ACTIVE : lambda.Tracing.DISABLED,
-      snapStart: snapStartConf,
-      deadLetterQueue: adminDlq,
-      environment: commonEnv,
-    });
-    modelsTable?.grantReadWriteData(adminHandler);
-    versionsTable?.grantReadWriteData(adminHandler);
-    artifactsBucket?.grantRead(adminHandler);
-    artifactsBucket?.grantDelete(adminHandler);
-    maybeProvision(adminHandler, 'AdminHandler');
-
     // ── SweeperHandler — hourly orphan reconciler; read-only on Models ────────
     // reservedConcurrentExecutions=1: two sweeps must never overlap.
 
@@ -207,7 +184,6 @@ export class ComputeStack extends cdk.Stack {
 
     this.modelHandlerArn = modelHandler.functionArn;
     this.versionHandlerArn = versionHandler.functionArn;
-    this.adminHandlerArn = adminHandler.functionArn;
     this.sweeperHandlerArn = sweeperHandler.functionArn;
   }
 }

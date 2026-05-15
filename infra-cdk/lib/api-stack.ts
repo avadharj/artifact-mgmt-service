@@ -12,7 +12,6 @@ export interface ApiStackProps extends cdk.StackProps {
   config: StageConfig;
   modelHandlerArn?: string;
   versionHandlerArn?: string;
-  adminHandlerArn?: string;
   /** Override the parsed OpenAPI document. Tests inject a stub so the
    *  snapshot doesn't depend on the Smithy build output being present. */
   openApiSpecOverride?: object;
@@ -44,8 +43,6 @@ export class ApiStack extends cdk.Stack {
       props.modelHandlerArn ?? `arn:aws:lambda:${region}:123456789012:function:placeholder-model`;
     const versionArn =
       props.versionHandlerArn ?? `arn:aws:lambda:${region}:123456789012:function:placeholder-version`;
-    const adminArn =
-      props.adminHandlerArn ?? `arn:aws:lambda:${region}:123456789012:function:placeholder-admin`;
 
     // ── OpenAPI document: inject AWS_IAM auth + Lambda integrations ───────────
 
@@ -73,9 +70,10 @@ export class ApiStack extends cdk.Stack {
         if (typeof operation !== 'object' || !operation.operationId) continue;
 
         const operationId: string = operation.operationId;
-        let handlerArn = adminArn;
+        let handlerArn: string;
         if (MODEL_OPERATIONS.has(operationId)) handlerArn = modelArn;
         else if (VERSION_OPERATIONS.has(operationId)) handlerArn = versionArn;
+        else throw new Error(`Unrouted operationId "${operationId}" — add it to MODEL_OPERATIONS or VERSION_OPERATIONS`);
 
         operation.security = [{ sigv4: [] }];
         operation['x-amazon-apigateway-integration'] = {
@@ -143,7 +141,6 @@ export class ApiStack extends cdk.Stack {
 
     if (props.modelHandlerArn) addInvokePermission(modelArn, 'ModelHandler');
     if (props.versionHandlerArn) addInvokePermission(versionArn, 'VersionHandler');
-    if (props.adminHandlerArn) addInvokePermission(adminArn, 'AdminHandler');
 
     this.apiId = api.restApiId;
     this.apiUrl = api.url;
