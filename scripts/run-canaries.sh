@@ -81,12 +81,9 @@ print("─" * 64)
 try:
     # ── 1. CreateModel ────────────────────────────────────────────────────────
     r, ms = timed("POST", f"{api_url}/models", json={
-        "modelName":        canary_name,
-        "description":      "synthetic canary — safe to delete",
-        "framework":        "canary",
-        "frameworkVersion": "0.0",
-        "trainingMetadata": {},
-        "depSnapshot":      {},
+        "modelName":   canary_name,
+        "description": "synthetic canary — safe to delete",
+        "frameworkHint": "canary",
     })
     if check("CreateModel", r, 201, ms):
         model_ok = True
@@ -94,17 +91,22 @@ try:
     # ── 2. CreateVersion ──────────────────────────────────────────────────────
     if model_ok:
         r, ms = timed("POST", f"{api_url}/models/{canary_name}/versions",
-                      json={"description": "canary v1.0"})
+                      json={"idempotencyKey": f"canary-{canary_name}-v1",
+                            "depSnapshot": {}})
         if check("CreateVersion", r, 201, ms):
             body        = r.json()
-            version_key = body.get("versionKey")   # "1.0"
+            version_key = body.get("version")   # "1.0"
             upload_url  = body.get("uploadUrl")
 
     # ── 3. S3 presigned PUT (URL is already signed — no SigV4 needed) ─────────
+    # The presigner signs Content-Type: application/octet-stream; the client must include it.
     if upload_url:
         payload = b"canary-synthetic-artifact"
         t0      = time.monotonic()
-        r2      = requests.put(upload_url, data=payload, timeout=15)
+        r2      = requests.put(
+            upload_url, data=payload, timeout=15,
+            headers={"Content-Type": "application/octet-stream"},
+        )
         ms2     = (time.monotonic() - t0) * 1000
         if r2.status_code not in (200, 204):
             failures.append(
@@ -114,12 +116,12 @@ try:
             print(f"  ✓  {'S3 presigned PUT':<42} {r2.status_code}  {ms2:.0f}ms")
             version_ok = True
 
-    # ── 4. ConfirmVersion ─────────────────────────────────────────────────────
+    # ── 4. ConfirmVersion — PUT /models/{name}/versions/{version}/confirm ────────
     if version_key and version_ok:
-        major, minor = version_key.split(".")
         r, ms = timed(
-            "POST",
-            f"{api_url}/models/{canary_name}/versions/{major}/{minor}/confirm",
+            "PUT",
+            f"{api_url}/models/{canary_name}/versions/{version_key}/confirm",
+            json={},
         )
         check("ConfirmVersion", r, 200, ms)
 
@@ -149,9 +151,8 @@ finally:
     print("\n[canary] cleaning up ...")
     try:
         if version_key:
-            major, minor = version_key.split(".")
             requests.delete(
-                f"{api_url}/models/{canary_name}/versions/{major}/{minor}",
+                f"{api_url}/models/{canary_name}/versions/{version_key}",
                 auth=auth, timeout=10,
             )
     except Exception as exc:

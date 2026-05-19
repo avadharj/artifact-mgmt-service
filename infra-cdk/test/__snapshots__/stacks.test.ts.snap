@@ -1950,7 +1950,6 @@ exports[`ComputeStack beta matches snapshot 1`] = `
         "FunctionName": "artifact-mgmt-sweeper-beta",
         "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
         "MemorySize": 512,
-        "ReservedConcurrentExecutions": 1,
         "Role": {
           "Fn::GetAtt": [
             "SweeperHandlerServiceRole91A46B8C",
@@ -2481,7 +2480,6 @@ exports[`ComputeStack gamma matches snapshot 1`] = `
         "FunctionName": "artifact-mgmt-sweeper-gamma",
         "Handler": "com.anthropic.artifactmgmt.handlers.SweeperHandler::handleRequest",
         "MemorySize": 1024,
-        "ReservedConcurrentExecutions": 1,
         "Role": {
           "Fn::GetAtt": [
             "SweeperHandlerServiceRole91A46B8C",

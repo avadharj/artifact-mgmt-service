@@ -139,9 +139,10 @@ export class ComputeStack extends cdk.Stack {
       tracing: cfg.enableXRay ? lambda.Tracing.ACTIVE : lambda.Tracing.DISABLED,
       snapStart: snapStartConf,
       deadLetterQueue: sweeperDlq,
-      // Alpha skips reserved concurrency to fit within new-account quota (10).
-      // Beta+ keeps the overlap guard since concurrent sweeps would corrupt state at scale.
-      ...(cfg.stage === 'alpha' ? {} : { reservedConcurrentExecutions: 1 }),
+      // Reserved concurrency guards against overlapping sweeps corrupting DDB state.
+      // Only applied when the stage has provisioned concurrency (prod), because
+      // reserving any slot on a low-quota dev account (total=10) causes deploy failures.
+      ...(cfg.lambdaProvisionedConcurrency ? { reservedConcurrentExecutions: 1 } : {}),
       environment: {
         ...commonEnv,
         DRY_RUN: 'false',
