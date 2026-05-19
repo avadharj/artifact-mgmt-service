@@ -45,3 +45,4 @@ META-INF/
 # Claude Code
 CLAUDE.md
 __pycache__/
+.claude/
