@@ -59,7 +59,6 @@ export const STAGES: Record<string, StageConfig> = {
     ddbProvisionedCapacity: { read: 50, write: 50 },
     lambdaSnapStart: true,
     lambdaMemoryMB: 1024,
-    lambdaProvisionedConcurrency: 5,
     alarmEmail: 'avadhani.a@northeastern.edu',
     enableXRay: true,
   },
